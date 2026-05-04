@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -18,9 +16,6 @@ import 'plantastic_loading.dart';
 /// Radii tuned for a calmer, store-grade shop tile (see home polish).
 const double _kShopCardRadius = 16;
 const double _kShopHeroRadius = 12;
-
-/// Space kept for title/price/footer below the **square** hero in grid cells.
-const double _kShopHeroFooterReserve = 100;
 
 Widget _brightenHero(Widget child) {
   const matrix = <double>[
@@ -337,8 +332,9 @@ class _ProductShopCardState extends State<ProductShopCard> {
                     return const SizedBox.shrink();
                   }
                   final mh = constraints.maxHeight;
-                  /// Grid / fixed-height parents give a finite max height; lay out with
-                  /// flex + scroll so the footer never overflows (see home SliverGrid).
+
+                  /// Grid cells fix height; footer stays visible without in-card scroll —
+                  /// hero shrinks to fill remaining space above the text block.
                   final boundedHeight = mh.isFinite && mh > 0;
 
                   final footer = DecoratedBox(
@@ -378,9 +374,6 @@ class _ProductShopCardState extends State<ProductShopCard> {
                   );
 
                   if (boundedHeight) {
-                    final maxSquareByHeight =
-                        math.max(64.0, mh - _kShopHeroFooterReserve);
-                    final heroSide = math.min(w, maxSquareByHeight);
                     return SizedBox(
                       width: w,
                       height: mh,
@@ -388,33 +381,19 @@ class _ProductShopCardState extends State<ProductShopCard> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         mainAxisSize: MainAxisSize.max,
                         children: [
-                          ClipRRect(
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(_kShopHeroRadius),
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: ColoredBox(
-                              color: heroBg,
-                              child: SizedBox(
-                                height: heroSide,
-                                width: w,
-                                child: Center(
-                                  child: SizedBox.square(
-                                    dimension: heroSide,
-                                    child: heroBlock(),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
                           Expanded(
-                            child: ClipRect(
-                              child: SingleChildScrollView(
-                                physics: const ClampingScrollPhysics(),
-                                child: footer,
+                            child: ClipRRect(
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(_kShopHeroRadius),
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: ColoredBox(
+                                color: heroBg,
+                                child: heroBlock(),
                               ),
                             ),
                           ),
+                          footer,
                         ],
                       ),
                     );
@@ -483,8 +462,9 @@ class _CardBody extends StatelessWidget {
 
     final lineHighlights = highlights.take(3).toList(growable: false);
 
-    final kitsLabel =
-        product.kits.length == 1 ? '1 kit' : '${product.kits.length} kits';
+    final kitsLabel = product.kits.length == 1
+        ? '1 kit'
+        : '${product.kits.length} kits';
 
     final dimGrey = cs.onSurfaceVariant;
 
@@ -601,10 +581,7 @@ class _CardBody extends StatelessWidget {
             runSpacing: compact ? 5 : 6,
             children: [
               for (final h in lineHighlights)
-                _SubtitleHighlightIcon(
-                  tag: h,
-                  compact: compact,
-                ),
+                _SubtitleHighlightIcon(tag: h, compact: compact),
             ],
           ),
         ],
@@ -633,9 +610,7 @@ class _CardBody extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: accent.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: accent.withValues(alpha: 0.32),
-                    ),
+                    border: Border.all(color: accent.withValues(alpha: 0.32)),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
@@ -663,10 +638,7 @@ class _CardBody extends StatelessWidget {
 
 /// Small highlight badge on shop card “N kits” subtitle — per [iconKey] colors.
 class _SubtitleHighlightIcon extends StatelessWidget {
-  const _SubtitleHighlightIcon({
-    required this.tag,
-    required this.compact,
-  });
+  const _SubtitleHighlightIcon({required this.tag, required this.compact});
 
   final HighlightTag tag;
   final bool compact;
@@ -874,9 +846,7 @@ class _HeroImage extends StatelessWidget {
                     if (progress == null) return child;
                     return ColoredBox(
                       color: Colors.grey.shade100,
-                      child: Center(
-                        child: PlantasticLoading.thumbnail,
-                      ),
+                      child: Center(child: PlantasticLoading.thumbnail),
                     );
                   },
                   errorBuilder: (c, e, s) => _fallback(context),
@@ -904,13 +874,10 @@ class _HeroImage extends StatelessWidget {
               if (progress == null) return child;
               return ColoredBox(
                 color: Colors.grey.shade100,
-                child: Center(
-                  child: PlantasticLoading.thumbnail,
-                ),
+                child: Center(child: PlantasticLoading.thumbnail),
               );
             },
-            errorBuilder: (context, error, stackTrace) =>
-                _fallback(context),
+            errorBuilder: (context, error, stackTrace) => _fallback(context),
           ),
         ),
       );

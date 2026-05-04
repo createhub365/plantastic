@@ -328,7 +328,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                         crossAxisCount: gridCols,
                                         crossAxisSpacing: spacing,
                                         mainAxisSpacing: rowGap,
-                                        childAspectRatio: 0.62,
+                                        /// Taller cells when only 1–2 columns so titles +
+                                        /// highlights fit without clipping the footer.
+                                        childAspectRatio:
+                                            gridCols <= 2 ? 0.56 : 0.62,
                                       ),
                                       delegate: SliverChildBuilderDelegate(
                                         (context, i) {
