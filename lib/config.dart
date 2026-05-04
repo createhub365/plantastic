@@ -18,4 +18,8 @@ abstract final class AppConfig {
   /// When anon key ends up empty: `'empty'` (= line exists but blank),
   /// `'missing'` (none of the known keys), else null.
   static String? anonKeyProblemHint;
+
+  /// Razorpay Standard Checkout **Key ID** (`rzp_live_…` / `rzp_test_…`), not the secret.
+  /// Env: `RAZORPAY_KEY_ID`, `RAZORPAY_API_KEY`, or `RAZORPAY_PUBLISHABLE_KEY`; dart-define: `RAZORPAY_KEY_ID` / `RAZORPAY_API_KEY`.
+  static String razorpayKeyId = '';
 }

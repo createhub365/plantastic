@@ -13,6 +13,9 @@ class OrderService {
     required String addressLine1,
     required String city,
     required String postalCode,
+    String? razorpayPaymentId,
+    String? razorpayOrderId,
+    String? razorpaySignature,
   }) async {
     if (!AppConfig.supabaseReady) {
       return OrderResult.failure(
@@ -37,9 +40,7 @@ class OrderService {
         .toList();
 
     try {
-      // Guest checkout runs as Supabase `anon`. RLS allows INSERT but not SELECT on
-      // `orders`, so `.select()` after insert fails (RETURNING triggers SELECT policies).
-      await Supabase.instance.client.from('orders').insert({
+      final row = <String, dynamic>{
         'customer_name': customerName.trim(),
         'phone': phone.trim(),
         'address_line1': addressLine1.trim(),
@@ -47,7 +48,23 @@ class OrderService {
         'postal_code': postalCode.trim(),
         'items': items,
         'total': total,
-      });
+      };
+      final payId = razorpayPaymentId?.trim();
+      if (payId != null && payId.isNotEmpty) {
+        row['razorpay_payment_id'] = payId;
+      }
+      final oid = razorpayOrderId?.trim();
+      if (oid != null && oid.isNotEmpty) {
+        row['razorpay_order_id'] = oid;
+      }
+      final sig = razorpaySignature?.trim();
+      if (sig != null && sig.isNotEmpty) {
+        row['razorpay_signature'] = sig;
+      }
+
+      // Guest checkout runs as Supabase `anon`. RLS allows INSERT but not SELECT on
+      // `orders`, so `.select()` after insert fails (RETURNING triggers SELECT policies).
+      await Supabase.instance.client.from('orders').insert(row);
 
       return OrderResult.success(orderId: null);
     } catch (e, st) {

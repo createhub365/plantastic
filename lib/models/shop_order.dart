@@ -11,6 +11,8 @@ class ShopOrder {
     required this.total,
     required this.rawItems,
     required this.status,
+    this.razorpayPaymentId,
+    this.razorpayOrderId,
   });
 
   final String id;
@@ -26,6 +28,9 @@ class ShopOrder {
   /// Raw DB value (e.g. `pending`, `shipped`). Defaults when column absent.
   final String status;
 
+  final String? razorpayPaymentId;
+  final String? razorpayOrderId;
+
   ShopOrder copyWith({String? status}) {
     return ShopOrder(
       id: id,
@@ -38,6 +43,8 @@ class ShopOrder {
       total: total,
       rawItems: rawItems,
       status: status ?? this.status,
+      razorpayPaymentId: razorpayPaymentId,
+      razorpayOrderId: razorpayOrderId,
     );
   }
 
@@ -65,6 +72,9 @@ class ShopOrder {
         ? 'pending'
         : '$rawStatus'.trim().toLowerCase();
 
+    final rpPay = row['razorpay_payment_id'];
+    final rpOrd = row['razorpay_order_id'];
+
     return ShopOrder(
       id: row['id'] == null ? '' : '${row['id']}',
       createdAt: at,
@@ -76,6 +86,8 @@ class ShopOrder {
       total: row['total'] as num? ?? 0,
       rawItems: parsed,
       status: statusStr.isEmpty ? 'pending' : statusStr,
+      razorpayPaymentId: rpPay == null ? null : '$rpPay'.trim(),
+      razorpayOrderId: rpOrd == null ? null : '$rpOrd'.trim(),
     );
   }
 }

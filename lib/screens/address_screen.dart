@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -5,6 +6,8 @@ import '../config.dart';
 import '../layout/plantastic_layout.dart';
 import '../providers/cart_provider.dart';
 import '../services/order_service.dart';
+import '../services/razorpay_backend_service.dart';
+import '../services/razorpay_checkout.dart';
 import '../widgets/plantastic_app_bar.dart';
 import '../widgets/plantastic_loading.dart';
 import 'order_success_screen.dart';
@@ -72,6 +75,95 @@ class _AddressScreenState extends State<AddressScreen> {
 
     setState(() => _submitting = true);
 
+    final totalRupee =
+        cart.lines.fold<int>(0, (s, line) => s + line.lineTotal);
+    final amountPaise = totalRupee * 100;
+    final keyId = AppConfig.razorpayKeyId.trim();
+    final useRazorpay = keyId.isNotEmpty &&
+        totalRupee > 0 &&
+        (kIsWeb ||
+            defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS);
+
+    String? serverRzpOrderId;
+    if (useRazorpay && AppConfig.supabaseReady) {
+      serverRzpOrderId = await RazorpayBackendService.createOrder(amountPaise);
+    }
+
+    RazorpayCheckoutResult paymentOutcome =
+        RazorpayCheckoutResult.skipped();
+    if (useRazorpay) {
+      paymentOutcome = await presentPlantasticRazorpayCheckout(
+        keyId: keyId,
+        amountPaise: amountPaise,
+        customerName: _name.text.trim(),
+        customerPhone: _phone.text.trim(),
+        serverOrderId: serverRzpOrderId,
+      );
+      if (!mounted) return;
+
+      if (paymentOutcome.blocksOrder) {
+        setState(() => _submitting = false);
+        final msg = paymentOutcome.status == RazorpayCheckoutStatus.cancelled
+            ? 'Payment cancelled'
+            : (paymentOutcome.message ?? 'Payment failed');
+        messenger.showSnackBar(
+          SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating),
+        );
+        return;
+      }
+
+      final pid = paymentOutcome.paymentId?.trim();
+      if (pid == null || pid.isEmpty) {
+        setState(() => _submitting = false);
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Payment did not return an id. Try again.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      final serverFlow =
+          serverRzpOrderId != null && serverRzpOrderId.trim().isNotEmpty;
+      if (serverFlow) {
+        final oid = paymentOutcome.orderId?.trim();
+        final sig = paymentOutcome.signature?.trim();
+        if (oid == null ||
+            oid.isEmpty ||
+            sig == null ||
+            sig.isEmpty) {
+          setState(() => _submitting = false);
+          messenger.showSnackBar(
+            const SnackBar(
+              content: Text('Incomplete payment response. Try again.'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          return;
+        }
+        final verified = await RazorpayBackendService.verifyPayment(
+          orderId: oid,
+          paymentId: pid,
+          signature: sig,
+        );
+        if (!mounted) return;
+        if (!verified) {
+          setState(() => _submitting = false);
+          messenger.showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Payment could not be verified. If money was deducted, contact support.',
+              ),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          return;
+        }
+      }
+    }
+
     final result = await OrderService.placeOrder(
       lines: cart.lines,
       customerName: _name.text,
@@ -79,6 +171,9 @@ class _AddressScreenState extends State<AddressScreen> {
       addressLine1: _line1.text,
       city: _city.text,
       postalCode: _postal.text,
+      razorpayPaymentId: paymentOutcome.paymentId,
+      razorpayOrderId: paymentOutcome.orderId,
+      razorpaySignature: paymentOutcome.signature,
     );
 
     if (!mounted) return;
@@ -102,9 +197,22 @@ class _AddressScreenState extends State<AddressScreen> {
     }
   }
 
+  String _checkoutButtonLabel(CartNotifier cart) {
+    final totalRupee =
+        cart.lines.fold<int>(0, (s, line) => s + line.lineTotal);
+    final keyId = AppConfig.razorpayKeyId.trim();
+    final pay = keyId.isNotEmpty &&
+        totalRupee > 0 &&
+        (kIsWeb ||
+            defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS);
+    return pay ? 'Pay & place order' : 'Place order';
+  }
+
   @override
   Widget build(BuildContext context) {
     final configured = AppConfig.supabaseReady;
+    final cart = context.watch<CartNotifier>();
     final g = PlantasticLayout.gutter(context);
     final cs = Theme.of(context).colorScheme;
 
@@ -278,7 +386,7 @@ class _AddressScreenState extends State<AddressScreen> {
                           width: 22,
                           child: Center(child: PlantasticLoading.inline),
                         )
-                      : const Text('Place order'),
+                      : Text(_checkoutButtonLabel(cart)),
                 ),
               ),
             ),

@@ -235,6 +235,16 @@ class _AdminOrdersPanelState extends State<AdminOrdersPanel>
                           'Address',
                           '${o.addressLine1}\n${o.city} ${o.postalCode}',
                         ),
+                        if (o.razorpayPaymentId != null &&
+                            o.razorpayPaymentId!.trim().isNotEmpty) ...[
+                          _line(
+                            'Razorpay payment',
+                            o.razorpayPaymentId!.trim(),
+                          ),
+                          if (o.razorpayOrderId != null &&
+                              o.razorpayOrderId!.trim().isNotEmpty)
+                            _line('Razorpay order', o.razorpayOrderId!.trim()),
+                        ],
                         Padding(
                           padding: const EdgeInsets.only(bottom: 6, top: 4),
                           child: Text(

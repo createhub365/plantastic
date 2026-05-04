@@ -63,6 +63,30 @@ String _effectiveSupabaseAnonKey(Map<String, String> env) {
   return picked != null ? _stripEnvQuotes(picked) : '';
 }
 
+/// Publishable Razorpay **Key ID** only (`rzp_live_…` / `rzp_test_…`).
+/// Never put Key Secret in `.env` bundled with the app — use it only on a server / Edge Function.
+String _razorpayKeyIdFromDefines() {
+  for (final raw in [
+    const String.fromEnvironment('RAZORPAY_KEY_ID', defaultValue: ''),
+    const String.fromEnvironment('RAZORPAY_API_KEY', defaultValue: ''),
+  ]) {
+    final s = _stripEnvQuotes(raw).trim();
+    if (s.isNotEmpty) return s;
+  }
+  return '';
+}
+
+String _effectiveRazorpayKeyId(Map<String, String> env) {
+  final fromDefine = _razorpayKeyIdFromDefines();
+  if (fromDefine.isNotEmpty) return fromDefine;
+  final picked = _pickNonEmpty(env, [
+    'RAZORPAY_KEY_ID',
+    'RAZORPAY_API_KEY',
+    'RAZORPAY_PUBLISHABLE_KEY',
+  ]);
+  return picked != null ? _stripEnvQuotes(picked).trim() : '';
+}
+
 void _reportUnhandled(Object source, Object error, StackTrace? stack) {
   final msg =
       '[Plantastic][$source] $error${stack != null ? '\n$stack' : ''}';
@@ -116,6 +140,7 @@ Future<void> _bootstrap() async {
   AppConfig.anonKeyLength = 0;
   AppConfig.anonKeyProblemHint = null;
   AppConfig.supabaseUrlMissing = false;
+  AppConfig.razorpayKeyId = '';
 
   try {
     var raw = await rootBundle.loadString('.env');
@@ -131,6 +156,7 @@ Future<void> _bootstrap() async {
   }
 
   final env = dotenv.isInitialized ? dotenv.env : <String, String>{};
+  AppConfig.razorpayKeyId = _effectiveRazorpayKeyId(env);
   final url = _effectiveSupabaseUrl(env);
   AppConfig.supabaseUrlMissing = url.isEmpty;
 
