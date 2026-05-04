@@ -34,6 +34,33 @@ String? _pickNonEmpty(Map<String, String> m, Iterable<String> keys) {
   return null;
 }
 
+/// Prefer compile-time [--dart-define] (CI / Netlify); else bundled `.env`.
+String _effectiveSupabaseUrl(Map<String, String> env) {
+  final define =
+      _stripEnvQuotes(String.fromEnvironment('SUPABASE_URL', defaultValue: ''))
+          .trim();
+  if (define.isNotEmpty) return define;
+  final picked =
+      _pickNonEmpty(env, ['SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_URL']);
+  return picked != null ? _stripEnvQuotes(picked).trim() : '';
+}
+
+/// Prefer compile-time [--dart-define]; else bundled `.env`.
+String _effectiveSupabaseAnonKey(Map<String, String> env) {
+  final define =
+      _stripEnvQuotes(
+            String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: ''),
+          )
+          .trim();
+  if (define.isNotEmpty) return define;
+  final picked = _pickNonEmpty(env, [
+    'SUPABASE_ANON_KEY',
+    'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+    'PUBLIC_SUPABASE_ANON_KEY',
+  ]);
+  return picked != null ? _stripEnvQuotes(picked) : '';
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -67,23 +94,13 @@ Future<void> main() async {
   }
 
   final env = dotenv.isInitialized ? dotenv.env : <String, String>{};
-  final urlRaw = _pickNonEmpty(env, [
-    'SUPABASE_URL',
-    'NEXT_PUBLIC_SUPABASE_URL',
-  ]);
-  final urlParsed = urlRaw != null ? _stripEnvQuotes(urlRaw) : '';
-  final url = urlParsed.trim();
+  final url = _effectiveSupabaseUrl(env);
   AppConfig.supabaseUrlMissing = url.isEmpty;
 
-  final keyRaw = _pickNonEmpty(env, [
-    'SUPABASE_ANON_KEY',
-    'NEXT_PUBLIC_SUPABASE_ANON_KEY',
-    'PUBLIC_SUPABASE_ANON_KEY',
-  ]);
-  final key = keyRaw != null ? _stripEnvQuotes(keyRaw) : '';
-  AppConfig.anonKeyLength = key.length;
+  final key = _effectiveSupabaseAnonKey(env);
+  AppConfig.anonKeyLength = key.trim().length;
 
-  if (key.isEmpty) {
+  if (key.trim().isEmpty) {
     const anonNames = [
       'SUPABASE_ANON_KEY',
       'NEXT_PUBLIC_SUPABASE_ANON_KEY',
@@ -99,9 +116,10 @@ Future<void> main() async {
   }
 
   AppConfig.supabaseReady = false;
-  if (url.isNotEmpty && key.length > 20) {
+  final trimmedKey = key.trim();
+  if (url.isNotEmpty && trimmedKey.length > 20) {
     try {
-      await Supabase.initialize(url: url, anonKey: key);
+      await Supabase.initialize(url: url, anonKey: trimmedKey);
       AppConfig.supabaseReady = true;
     } catch (e, st) {
       AppConfig.supabaseInitError = '$e';
@@ -113,7 +131,7 @@ Future<void> main() async {
   } else if (kDebugMode) {
     debugPrint(
       'Supabase skipped: need SUPABASE_URL + anon key. '
-      'urlLen=${url.length} keyLen=${key.length}',
+      'urlLen=${url.length} keyLen=${trimmedKey.length}',
     );
   }
 

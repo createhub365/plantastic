@@ -1,0 +1,2 @@
+# Bash used on Linux CI (Netlify); CRLF breaks shebang parsing.
+scripts/*.sh text eol=lf
