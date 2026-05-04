@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -72,7 +74,15 @@ void _reportUnhandled(Object source, Object error, StackTrace? stack) {
   }
 }
 
-Future<void> main() async {
+void main() {
+  runZonedGuarded(() {
+    unawaited(_bootstrap());
+  }, (error, stack) {
+    _reportUnhandled('Zone', error, stack);
+  });
+}
+
+Future<void> _bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   FlutterError.onError = (FlutterErrorDetails details) {

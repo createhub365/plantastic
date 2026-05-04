@@ -33,7 +33,12 @@
   <link rel="icon" type="image/png" href="favicon.png"/>
 
   <title>plantastic</title>
-  <link rel="manifest" href="manifest.json">
+  <!--
+    Omit <link rel="manifest">: Vercel preview URLs with Deployment Protection
+    often return 401 for manifest fetch (Chrome still loads the SPA). Theme /
+    icons use meta + apple-touch-icon above; manifest.json remains in web/ for hosts
+    that support public PWA install without that issue.
+  -->
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
