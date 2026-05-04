@@ -6,6 +6,7 @@ import '../../layout/screen_breakpoints.dart';
 import '../../theme/admin_shell.dart';
 import '../../widgets/admin/admin_dashboard_sidebar.dart';
 import 'admin_highlight_tags_panel.dart';
+import 'admin_home_banner_panel.dart';
 import 'admin_kit_catalog_panel.dart';
 import 'admin_kit_presets_panel.dart';
 import 'admin_orders_panel.dart';
@@ -31,6 +32,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     'Kit items',
     'Kit presets',
     'Highlights',
+    'Home banner',
   ];
 
   @override
@@ -115,6 +117,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                               const AdminKitCatalogPanel(),
                               const AdminKitPresetsPanel(),
                               const AdminHighlightTagsPanel(),
+                              const AdminHomeBannerPanel(),
                             ],
                           ),
                         ),

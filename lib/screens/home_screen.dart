@@ -9,6 +9,7 @@ import '../config.dart';
 import '../data/seed_products.dart';
 import '../models/product.dart';
 import '../providers/cart_provider.dart';
+import '../notifiers/home_banner_notifier.dart';
 import '../providers/catalog_notifier.dart';
 import '../layout/plantastic_layout.dart';
 import '../layout/responsive.dart';
@@ -16,7 +17,7 @@ import '../navigation/plantastic_navigation.dart';
 import '../widgets/cart_strip_bar.dart';
 import '../widgets/cart_toolbar_icon_button.dart';
 import '../widgets/plantastic_app_bar.dart';
-import '../widgets/glass_card.dart';
+import '../widgets/plantastic_home_hero.dart';
 import '../widgets/motion_widgets.dart';
 import '../widgets/plantastic_loading.dart';
 import '../widgets/plantastic_scroll_behavior.dart';
@@ -110,8 +111,11 @@ class _HomeScreenState extends State<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       guardCatalogFuture(
-        context.read<CatalogNotifier>().refresh(),
-        'HomeScreen.refresh',
+        Future.wait<void>([
+          context.read<CatalogNotifier>().refresh(),
+          context.read<HomeBannerNotifier>().refresh(),
+        ]),
+        'HomeScreen.bootstrap',
       );
     });
   }
@@ -222,7 +226,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       PlantasticLayout.gutter(context),
                                       0,
                                     ),
-                                    child: _HomeHeroBanner(),
+                                    child: PlantasticHomeHeroBanner(),
                                   ),
                                 ),
                                 SliverToBoxAdapter(
@@ -405,62 +409,6 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         },
       ),
-      ),
-    );
-  }
-}
-
-/// Hero strip — green lives here (not full-page).
-class _HomeHeroBanner extends StatelessWidget {
-  const _HomeHeroBanner();
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 160,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.primary,
-                    AppColors.primaryLight,
-                  ],
-                ),
-              ),
-            ),
-            GlassCard(
-              borderRadius: 0,
-              blur: true,
-              sigma: 14,
-              fillColor: Colors.white.withValues(alpha: 0.1),
-              borderColor: Colors.white.withValues(alpha: 0.28),
-              padding: const EdgeInsets.all(18),
-              child: Align(
-                alignment: Alignment.bottomLeft,
-                child: Text(
-                  'Grow your own garden 🌱',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black.withValues(alpha: 0.35),
-                            blurRadius: 10,
-                          ),
-                        ],
-                      ),
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -10,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config.dart';
 import 'providers/cart_provider.dart';
 import 'providers/catalog_notifier.dart';
+import 'notifiers/home_banner_notifier.dart';
 import 'screens/admin/admin_gate_screen.dart';
 import 'screens/cart_screen.dart';
 import 'screens/home_screen.dart';
@@ -176,6 +177,7 @@ Future<void> _bootstrap() async {
       providers: [
         ChangeNotifierProvider(create: (_) => CartNotifier()),
         ChangeNotifierProvider(create: (_) => CatalogNotifier()),
+        ChangeNotifierProvider(create: (_) => HomeBannerNotifier()),
       ],
       child: const PlantasticApp(),
     ),

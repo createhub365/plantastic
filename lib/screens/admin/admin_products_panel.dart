@@ -367,7 +367,6 @@ class _AdminProductsPanelState extends State<AdminProductsPanel>
     final scheme = Theme.of(context).colorScheme;
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(AdminShell.cardRadiusSm),
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AdminShell.cardRadiusSm),
@@ -451,7 +450,6 @@ class _AdminProductsPanelState extends State<AdminProductsPanel>
       padding: const EdgeInsets.only(top: 10, bottom: 8),
       child: Material(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(AdminShell.cardRadiusSm),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AdminShell.cardRadiusSm),
           side: BorderSide(color: scheme.primary.withValues(alpha: 0.35)),
@@ -539,6 +537,8 @@ class _AdminProductsPanelState extends State<AdminProductsPanel>
     final dt = Theme.of(context).dataTableTheme.copyWith(
       headingRowColor: WidgetStateProperty.all(AdminShell.dashboardCanvas),
       dataRowMinHeight: 56,
+      // M3 theme defaults dataRowMaxHeight to ~48; min must not exceed max.
+      dataRowMaxHeight: 72,
       headingRowHeight: 44,
       dividerThickness: 0.6,
     );

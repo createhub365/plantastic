@@ -22,6 +22,7 @@ class AdminDashboardSidebar extends StatelessWidget {
     (icon: Icons.checklist_rtl_outlined, label: 'Kit items'),
     (icon: Icons.layers_outlined, label: 'Kit presets'),
     (icon: Icons.auto_awesome_outlined, label: 'Highlights'),
+    (icon: Icons.panorama_wide_angle_select_outlined, label: 'Home banner'),
   ];
 
   @override
