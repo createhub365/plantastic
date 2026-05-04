@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -41,6 +42,72 @@ abstract final class AppTheme {
   static List<Shadow> leafyGlow(Color c, {double blur = 12}) => [
     Shadow(color: c.withValues(alpha: 0.35), blurRadius: blur),
   ];
+
+  /// Plus Jakarta where supported; Flutter web uses system/UI stack (no google_fonts fetch).
+  static TextStyle sans({
+    required Color color,
+    double? fontSize,
+    FontWeight? fontWeight,
+    double? height,
+    double? letterSpacing,
+    List<FontFeature>? fontFeatures,
+  }) {
+    if (!kIsWeb) {
+      return GoogleFonts.plusJakartaSans(
+        color: color,
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        height: height,
+        letterSpacing: letterSpacing,
+        fontFeatures: fontFeatures,
+      );
+    }
+    return TextStyle(
+      color: color,
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      height: height,
+      letterSpacing: letterSpacing,
+      fontFeatures: fontFeatures,
+    );
+  }
+
+  static TextStyle serifDisplay({
+    required Color color,
+    double? fontSize,
+    FontWeight? fontWeight,
+    double? height,
+    double? letterSpacing,
+    List<Shadow>? shadows,
+  }) {
+    if (!kIsWeb) {
+      return GoogleFonts.dmSerifDisplay(
+        color: color,
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        height: height,
+        letterSpacing: letterSpacing,
+        shadows: shadows,
+      );
+    }
+    return TextStyle(
+      inherit: true,
+      fontFamily: 'Georgia',
+      fontFamilyFallback: const [
+        'Palatino Linotype',
+        'Book Antiqua',
+        'Palatino',
+        'Times New Roman',
+        'serif',
+      ],
+      color: color,
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      height: height,
+      letterSpacing: letterSpacing,
+      shadows: shadows,
+    );
+  }
 
   static ThemeData dark() {
     const scheme = ColorScheme.dark(
@@ -316,60 +383,103 @@ abstract final class AppTheme {
         );
 
     const onInk = Color(0xFF122419);
-    final textTheme =
-        GoogleFonts.plusJakartaSansTextTheme(
-          Typography.material2021(
-            platform: TargetPlatform.android,
-          ).black.apply(bodyColor: onInk, displayColor: onInk),
-        ).copyWith(
-          displaySmall: GoogleFonts.dmSerifDisplay(
-            fontSize: 32,
-            fontWeight: FontWeight.w600,
-            color: onInk,
-            letterSpacing: -0.5,
-          ),
-          titleLarge: GoogleFonts.plusJakartaSans(
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.2,
-            color: onInk,
-          ),
-          titleMedium: GoogleFonts.plusJakartaSans(
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.1,
-            color: onInk,
-          ),
-          titleSmall: GoogleFonts.plusJakartaSans(
-            fontWeight: FontWeight.w600,
-            color: onInk,
-          ),
-          headlineSmall: GoogleFonts.plusJakartaSans(
-            fontWeight: FontWeight.bold,
-            letterSpacing: -0.35,
-            color: onInk,
-          ),
-          bodyLarge: GoogleFonts.plusJakartaSans(
-            height: 1.45,
-            fontWeight: FontWeight.w400,
-            color: const Color(0xFF2F4A3E),
-          ),
-          bodyMedium: GoogleFonts.plusJakartaSans(
-            height: 1.42,
-            color: const Color(0xFF2F4A3E),
-          ),
-          bodySmall: GoogleFonts.plusJakartaSans(
-            color: const Color(0xFF5B7568),
-            height: 1.35,
-          ),
-          labelLarge: GoogleFonts.plusJakartaSans(
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.2,
-            color: onInk,
-          ),
-          labelMedium: GoogleFonts.plusJakartaSans(
-            letterSpacing: 0.6,
-            fontWeight: FontWeight.w600,
-          ),
-        );
+    final textTheme = kIsWeb
+        ? Typography.material2021(platform: TargetPlatform.android).black
+              .apply(bodyColor: onInk, displayColor: onInk)
+              .copyWith(
+                displaySmall: serifDisplay(
+                  color: onInk,
+                  fontSize: 32,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.5,
+                ),
+                titleLarge: sans(
+                  color: onInk,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.2,
+                ),
+                titleMedium: sans(
+                  color: onInk,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.1,
+                ),
+                titleSmall: sans(color: onInk, fontWeight: FontWeight.w600),
+                headlineSmall: sans(
+                  color: onInk,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.35,
+                ),
+                bodyLarge: sans(
+                  color: const Color(0xFF2F4A3E),
+                  height: 1.45,
+                  fontWeight: FontWeight.w400,
+                ),
+                bodyMedium: sans(color: const Color(0xFF2F4A3E), height: 1.42),
+                bodySmall: sans(color: const Color(0xFF5B7568), height: 1.35),
+                labelLarge: sans(
+                  color: onInk,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.2,
+                ),
+                labelMedium: sans(
+                  letterSpacing: 0.6,
+                  fontWeight: FontWeight.w600,
+                  color: onInk,
+                ),
+              )
+        : GoogleFonts.plusJakartaSansTextTheme(
+            Typography.material2021(
+              platform: TargetPlatform.android,
+            ).black.apply(bodyColor: onInk, displayColor: onInk),
+          ).copyWith(
+            displaySmall: GoogleFonts.dmSerifDisplay(
+              fontSize: 32,
+              fontWeight: FontWeight.w600,
+              color: onInk,
+              letterSpacing: -0.5,
+            ),
+            titleLarge: GoogleFonts.plusJakartaSans(
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.2,
+              color: onInk,
+            ),
+            titleMedium: GoogleFonts.plusJakartaSans(
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.1,
+              color: onInk,
+            ),
+            titleSmall: GoogleFonts.plusJakartaSans(
+              fontWeight: FontWeight.w600,
+              color: onInk,
+            ),
+            headlineSmall: GoogleFonts.plusJakartaSans(
+              fontWeight: FontWeight.bold,
+              letterSpacing: -0.35,
+              color: onInk,
+            ),
+            bodyLarge: GoogleFonts.plusJakartaSans(
+              height: 1.45,
+              fontWeight: FontWeight.w400,
+              color: const Color(0xFF2F4A3E),
+            ),
+            bodyMedium: GoogleFonts.plusJakartaSans(
+              height: 1.42,
+              color: const Color(0xFF2F4A3E),
+            ),
+            bodySmall: GoogleFonts.plusJakartaSans(
+              color: const Color(0xFF5B7568),
+              height: 1.35,
+            ),
+            labelLarge: GoogleFonts.plusJakartaSans(
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.2,
+              color: onInk,
+            ),
+            labelMedium: GoogleFonts.plusJakartaSans(
+              letterSpacing: 0.6,
+              fontWeight: FontWeight.w600,
+            ),
+          );
 
     return ThemeData(
       useMaterial3: true,
@@ -397,7 +507,7 @@ abstract final class AppTheme {
         foregroundColor: onInk,
         centerTitle: false,
         shadowColor: Colors.black.withValues(alpha: 0.06),
-        systemOverlayStyle: SystemUiOverlayStyle.dark,
+        systemOverlayStyle: kIsWeb ? null : SystemUiOverlayStyle.dark,
         shape: Border(
           bottom: BorderSide(
             color: scheme.outline.withValues(alpha: 0.38),
@@ -478,12 +588,16 @@ abstract final class AppTheme {
         selectedColor: forestBright.withValues(alpha: 0.9),
         secondarySelectedColor: forestBright.withValues(alpha: 0.9),
         disabledColor: Colors.grey.shade200,
-        labelStyle: GoogleFonts.plusJakartaSans(
+        labelStyle: sans(
           color: onInk,
           fontWeight: FontWeight.w600,
           fontSize: 13,
         ),
-        secondaryLabelStyle: GoogleFonts.plusJakartaSans(color: Colors.white),
+        secondaryLabelStyle: sans(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
+        ),
         brightness: Brightness.light,
         side: BorderSide(color: scheme.outline.withValues(alpha: 0.6)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -535,7 +649,7 @@ abstract final class AppTheme {
         behavior: SnackBarBehavior.floating,
         elevation: 8,
         backgroundColor: const Color(0xFF203C2E),
-        contentTextStyle: GoogleFonts.plusJakartaSans(color: Colors.white),
+        contentTextStyle: sans(color: Colors.white),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
       dialogTheme: DialogThemeData(
@@ -549,10 +663,7 @@ abstract final class AppTheme {
       ),
       tooltipTheme: TooltipThemeData(
         waitDuration: const Duration(milliseconds: 520),
-        textStyle: GoogleFonts.plusJakartaSans(
-          color: Colors.white,
-          fontSize: 12,
-        ),
+        textStyle: sans(color: Colors.white, fontSize: 12),
         decoration: BoxDecoration(
           color: forest.withValues(alpha: 0.94),
           borderRadius: BorderRadius.circular(10),

@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../catalog/catalog_assets.dart';
@@ -494,7 +493,7 @@ class _CardBody extends StatelessWidget {
                     '${product.kits.length} kits',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.plusJakartaSans(
+                    style: AppTheme.sans(
                       fontSize: compact ? 10.35 : 11.85,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.42,
@@ -513,7 +512,7 @@ class _CardBody extends StatelessWidget {
           title,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: GoogleFonts.dmSerifDisplay(
+          style: AppTheme.serifDisplay(
             fontSize: compact ? 14.85 : 18.75,
             fontWeight: FontWeight.w600,
             height: compact ? 1.2 : 1.12,
@@ -532,7 +531,7 @@ class _CardBody extends StatelessWidget {
                       'From ₹$lowPrice · Unavailable',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.plusJakartaSans(
+                      style: AppTheme.sans(
                         fontSize: compact ? 10.75 : 12.85,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.06,
@@ -546,7 +545,7 @@ class _CardBody extends StatelessWidget {
                         children: [
                           TextSpan(
                             text: 'From ',
-                            style: GoogleFonts.plusJakartaSans(
+                            style: AppTheme.sans(
                               fontSize: compact ? 10.5 : 12.95,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 0.35,
@@ -556,7 +555,7 @@ class _CardBody extends StatelessWidget {
                           ),
                           TextSpan(
                             text: '₹$lowPrice',
-                            style: GoogleFonts.plusJakartaSans(
+                            style: AppTheme.sans(
                               fontSize: compact ? 12.05 : 15.35,
                               fontWeight: FontWeight.w800,
                               letterSpacing: -0.35,
@@ -604,7 +603,7 @@ class _CardBody extends StatelessWidget {
                 subtitle,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.plusJakartaSans(
+                style: AppTheme.sans(
                   fontSize: compact ? 10.35 : 11.85,
                   fontWeight: FontWeight.w500,
                   letterSpacing: 0.72,

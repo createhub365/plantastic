@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_theme.dart';
 
@@ -144,7 +143,7 @@ class PlantasticAppBar extends StatelessWidget implements PreferredSizeWidget {
                             'PLANTASTIC',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.dmSerifDisplay(
+                            style: AppTheme.serifDisplay(
                               fontSize: 26.5,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 0.38,
