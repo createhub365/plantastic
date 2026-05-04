@@ -379,7 +379,7 @@ class _AddressScreenState extends State<AddressScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Your data is सुरक्षित',
+                          'Your data is secure',
                           style:
                               Theme.of(context).textTheme.bodyMedium?.copyWith(
                                     color:
