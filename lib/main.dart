@@ -38,9 +38,8 @@ String? _pickNonEmpty(Map<String, String> m, Iterable<String> keys) {
 
 /// Prefer compile-time [--dart-define] (CI / Netlify); else bundled `.env`.
 String _effectiveSupabaseUrl(Map<String, String> env) {
-  final define =
-      _stripEnvQuotes(String.fromEnvironment('SUPABASE_URL', defaultValue: ''))
-          .trim();
+  const dartDefine = String.fromEnvironment('SUPABASE_URL', defaultValue: '');
+  final define = _stripEnvQuotes(dartDefine).trim();
   if (define.isNotEmpty) return define;
   final picked =
       _pickNonEmpty(env, ['SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_URL']);
@@ -49,11 +48,11 @@ String _effectiveSupabaseUrl(Map<String, String> env) {
 
 /// Prefer compile-time [--dart-define]; else bundled `.env`.
 String _effectiveSupabaseAnonKey(Map<String, String> env) {
-  final define =
-      _stripEnvQuotes(
-            String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: ''),
-          )
-          .trim();
+  const dartDefine = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+    defaultValue: '',
+  );
+  final define = _stripEnvQuotes(dartDefine).trim();
   if (define.isNotEmpty) return define;
   final picked = _pickNonEmpty(env, [
     'SUPABASE_ANON_KEY',
