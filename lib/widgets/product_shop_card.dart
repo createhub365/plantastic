@@ -114,6 +114,7 @@ class _ProductShopCardState extends State<ProductShopCard> {
                 fallbackIcon: fallbackIcon,
                 tintSurface: cs.surfaceContainerHighest,
                 deepSurface: cs.onSurface.withValues(alpha: .04),
+                alwaysContain: true,
               ),
             ),
           Positioned.fill(
@@ -354,10 +355,10 @@ class _ProductShopCardState extends State<ProductShopCard> {
                     ),
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(
-                        compact ? 10 : 16,
-                        compact ? 8 : 14,
-                        compact ? 10 : 16,
-                        compact ? 10 : 14,
+                        compact ? 8 : 10,
+                        compact ? 6 : 8,
+                        compact ? 8 : 10,
+                        compact ? 8 : 8,
                       ),
                       child: _CardBody(
                         accent: accent,
@@ -476,7 +477,7 @@ class _CardBody extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         _CategoryPill(category: product.category, compact: compact),
-        SizedBox(height: compact ? 6 : 8),
+        SizedBox(height: compact ? 4 : 5),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -486,33 +487,33 @@ class _CardBody extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: AppTheme.serifDisplay(
-                  fontSize: compact ? 15.5 : 17,
+                  fontSize: compact ? 13 : 14,
                   fontWeight: FontWeight.w600,
-                  height: compact ? 1.22 : 1.14,
-                  letterSpacing: -0.42,
+                  height: compact ? 1.18 : 1.12,
+                  letterSpacing: -0.38,
                   color: titleGreen,
                 ),
               ),
             ),
-            SizedBox(width: compact ? 6 : 8),
+            SizedBox(width: compact ? 4 : 6),
             Padding(
-              padding: EdgeInsets.only(top: compact ? 1 : 2),
+              padding: EdgeInsets.only(top: compact ? 0 : 1),
               child: Text(
                 kitsLabel,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppTheme.sans(
-                  fontSize: compact ? 10 : 11,
+                  fontSize: compact ? 8.75 : 9.25,
                   fontWeight: FontWeight.w600,
-                  letterSpacing: 0.3,
-                  height: 1.2,
+                  letterSpacing: 0.25,
+                  height: 1.15,
                   color: dimGrey.withValues(alpha: 0.82),
                 ),
               ),
             ),
           ],
         ),
-        SizedBox(height: compact ? 6 : 8),
+        SizedBox(height: compact ? 4 : 5),
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -523,7 +524,7 @@ class _CardBody extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppTheme.sans(
-                        fontSize: compact ? 10.75 : 12.85,
+                        fontSize: compact ? 9.5 : 11,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.06,
                         height: 1.06,
@@ -537,9 +538,9 @@ class _CardBody extends StatelessWidget {
                           TextSpan(
                             text: 'From ',
                             style: AppTheme.sans(
-                              fontSize: compact ? 10.25 : 11.5,
+                              fontSize: compact ? 9 : 10,
                               fontWeight: FontWeight.w500,
-                              letterSpacing: 0.28,
+                              letterSpacing: 0.22,
                               height: 1.06,
                               color: dimGrey.withValues(alpha: 0.55),
                             ),
@@ -547,9 +548,9 @@ class _CardBody extends StatelessWidget {
                           TextSpan(
                             text: '₹$lowPrice',
                             style: AppTheme.sans(
-                              fontSize: compact ? 12.25 : 15,
+                              fontSize: compact ? 10.75 : 12.5,
                               fontWeight: FontWeight.w800,
-                              letterSpacing: -0.35,
+                              letterSpacing: -0.32,
                               height: 1.06,
                               fontFeatures: const [
                                 FontFeature.tabularFigures(),
@@ -575,17 +576,17 @@ class _CardBody extends StatelessWidget {
           ],
         ),
         if (lineHighlights.isNotEmpty) ...[
-          SizedBox(height: compact ? 6 : 8),
+          SizedBox(height: compact ? 4 : 5),
           Wrap(
-            spacing: compact ? 5 : 6,
-            runSpacing: compact ? 5 : 6,
+            spacing: compact ? 4 : 5,
+            runSpacing: compact ? 4 : 5,
             children: [
               for (final h in lineHighlights)
                 _SubtitleHighlightIcon(tag: h, compact: compact),
             ],
           ),
         ],
-        SizedBox(height: compact ? 8 : 10),
+        SizedBox(height: compact ? 5 : 6),
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -595,10 +596,10 @@ class _CardBody extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppTheme.sans(
-                  fontSize: compact ? 11 : 12,
+                  fontSize: compact ? 9.75 : 10.25,
                   fontWeight: FontWeight.w500,
-                  letterSpacing: 0.35,
-                  height: 1.35,
+                  letterSpacing: 0.28,
+                  height: 1.32,
                   color: dimGrey.withValues(alpha: 0.62),
                 ),
               ),
@@ -646,8 +647,8 @@ class _SubtitleHighlightIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tip = tag.title.trim().isEmpty ? tag.pillText : tag.title.trim();
-    final dim = compact ? 16.0 : 18.5;
-    final iconSz = compact ? 10.0 : 11.5;
+    final dim = compact ? 14.5 : 16.0;
+    final iconSz = compact ? 9.0 : 10.0;
     final deco = highlightDetailDecoration(tag.iconKey);
 
     return Tooltip(
@@ -719,11 +720,11 @@ class _CategoryPill extends StatelessWidget {
 
     final icon = flower ? Icons.local_florist_rounded : Icons.eco_rounded;
 
-    final hPad = compact ? 4.5 : 5.5;
-    final vPad = compact ? 1.75 : 2.25;
-    final iconSize = compact ? 9.0 : 10.0;
-    final gap = compact ? 2.0 : 2.75;
-    final fontSize = compact ? 7.5 : 8.25;
+    final hPad = compact ? 4.0 : 5.0;
+    final vPad = compact ? 1.5 : 2.0;
+    final iconSize = compact ? 8.5 : 9.25;
+    final gap = compact ? 1.75 : 2.25;
+    final fontSize = compact ? 7.25 : 7.75;
 
     final textShadows = [
       Shadow(
@@ -794,6 +795,7 @@ class _HeroImage extends StatelessWidget {
     required this.fallbackIcon,
     required this.tintSurface,
     required this.deepSurface,
+    this.alwaysContain = false,
   });
 
   final String? assetPath;
@@ -801,6 +803,7 @@ class _HeroImage extends StatelessWidget {
   final IconData fallbackIcon;
   final Color tintSurface;
   final Color deepSurface;
+  final bool alwaysContain;
 
   Widget _fallback(BuildContext context) {
     final ph = Theme.of(context).colorScheme.primary;
@@ -832,6 +835,7 @@ class _HeroImage extends StatelessWidget {
             alignment: Alignment.center,
             width: double.infinity,
             height: double.infinity,
+            alwaysContain: alwaysContain,
             errorBuilder: (context, error, stackTrace) {
               final nw = networkUrl?.trim();
               if (nw != null &&
@@ -842,6 +846,7 @@ class _HeroImage extends StatelessWidget {
                   alignment: Alignment.center,
                   width: double.infinity,
                   height: double.infinity,
+                  alwaysContain: alwaysContain,
                   loadingBuilder: (context, child, progress) {
                     if (progress == null) return child;
                     return ColoredBox(
@@ -870,6 +875,7 @@ class _HeroImage extends StatelessWidget {
             alignment: Alignment.center,
             width: double.infinity,
             height: double.infinity,
+            alwaysContain: alwaysContain,
             loadingBuilder: (context, child, progress) {
               if (progress == null) return child;
               return ColoredBox(
