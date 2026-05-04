@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
-/// Fit policy for normalized shop artwork vs arbitrary uploads:
+/// Fit policy for catalogue artwork (normalized **1080×1080** masters vs larger uploads).
 ///
-/// When [alwaysContain] is false:
-/// **Decoded 1080×1080** → [BoxFit.cover] … **else** → [BoxFit.contain].
+/// Slot on shop tiles is square; this picks how pixels map into it:
 ///
-/// [canonicalSide] matches your pipeline’s normalized square master.
+/// * **Either decoded width or height > [canonicalSide]** → [BoxFit.cover] (crop excess).
+/// * **Otherwise** (exact 1080×1080, smaller, or non-square within bounds) →
+///   [BoxFit.contain] (full image visible inside the slot).
+///
+/// [canonicalSide] matches the pipeline’s square master size.
 class DecodeAwareProductImage extends StatefulWidget {
   const DecodeAwareProductImage({
     super.key,
@@ -19,9 +22,6 @@ class DecodeAwareProductImage extends StatefulWidget {
     this.semanticLabel,
     this.filterQuality = FilterQuality.medium,
     this.gaplessPlayback = true,
-
-    /// When true, always [BoxFit.contain] so nothing is cropped (e.g. shop cards).
-    this.alwaysContain = false,
   });
 
   static const int canonicalSide = 1080;
@@ -36,7 +36,6 @@ class DecodeAwareProductImage extends StatefulWidget {
   final String? semanticLabel;
   final FilterQuality filterQuality;
   final bool gaplessPlayback;
-  final bool alwaysContain;
 
   @override
   State<DecodeAwareProductImage> createState() =>
@@ -49,7 +48,6 @@ class _DecodeAwareProductImageState extends State<DecodeAwareProductImage> {
 
   BoxFit _fit = BoxFit.contain;
   bool _resolved = false;
-  bool _isCanonicalSquare = false;
 
   @override
   void didChangeDependencies() {
@@ -65,15 +63,8 @@ class _DecodeAwareProductImageState extends State<DecodeAwareProductImage> {
       setState(() {
         _resolved = false;
         _fit = BoxFit.contain;
-        _isCanonicalSquare = false;
       });
       _listenToStream(widget.image);
-    } else if (oldWidget.alwaysContain != widget.alwaysContain && _resolved) {
-      setState(() {
-        _fit = widget.alwaysContain
-            ? BoxFit.contain
-            : (_isCanonicalSquare ? BoxFit.cover : BoxFit.contain);
-      });
     }
   }
 
@@ -91,7 +82,6 @@ class _DecodeAwareProductImageState extends State<DecodeAwareProductImage> {
         _stopListening();
         setState(() {
           _fit = BoxFit.contain;
-          _isCanonicalSquare = false;
           _resolved = true;
         });
       },
@@ -103,17 +93,14 @@ class _DecodeAwareProductImageState extends State<DecodeAwareProductImage> {
     if (!mounted) return;
     _stopListening();
 
-    final w = info.image.width;
-    final h = info.image.height;
-    final canonical =
-        w == DecodeAwareProductImage.canonicalSide &&
-        h == DecodeAwareProductImage.canonicalSide;
+    final iw = info.image.width;
+    final ih = info.image.height;
+    final oversized =
+        iw > DecodeAwareProductImage.canonicalSide ||
+        ih > DecodeAwareProductImage.canonicalSide;
 
     setState(() {
-      _isCanonicalSquare = canonical;
-      _fit = widget.alwaysContain
-          ? BoxFit.contain
-          : (canonical ? BoxFit.cover : BoxFit.contain);
+      _fit = oversized ? BoxFit.cover : BoxFit.contain;
       _resolved = true;
     });
   }

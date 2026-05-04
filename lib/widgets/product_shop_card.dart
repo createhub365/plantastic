@@ -114,7 +114,6 @@ class _ProductShopCardState extends State<ProductShopCard> {
                 fallbackIcon: fallbackIcon,
                 tintSurface: cs.surfaceContainerHighest,
                 deepSurface: cs.onSurface.withValues(alpha: .04),
-                alwaysContain: true,
               ),
             ),
           Positioned.fill(
@@ -334,8 +333,8 @@ class _ProductShopCardState extends State<ProductShopCard> {
                   }
                   final mh = constraints.maxHeight;
 
-                  /// Grid cells fix height; footer stays visible without in-card scroll —
-                  /// hero shrinks to fill remaining space above the text block.
+                  /// Grid cells fix height: hero is always a **width×width** square —
+                  /// text/footer never resizes the image slot ([DecodeAwareProductImage] picks cover/contain).
                   final boundedHeight = mh.isFinite && mh > 0;
 
                   final footer = DecoratedBox(
@@ -382,7 +381,9 @@ class _ProductShopCardState extends State<ProductShopCard> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         mainAxisSize: MainAxisSize.max,
                         children: [
-                          Expanded(
+                          SizedBox(
+                            width: w,
+                            height: w,
                             child: ClipRRect(
                               borderRadius: const BorderRadius.vertical(
                                 top: Radius.circular(_kShopHeroRadius),
@@ -394,7 +395,14 @@ class _ProductShopCardState extends State<ProductShopCard> {
                               ),
                             ),
                           ),
-                          footer,
+                          Expanded(
+                            child: ClipRect(
+                              child: Align(
+                                alignment: Alignment.topCenter,
+                                child: footer,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     );
@@ -795,7 +803,6 @@ class _HeroImage extends StatelessWidget {
     required this.fallbackIcon,
     required this.tintSurface,
     required this.deepSurface,
-    this.alwaysContain = false,
   });
 
   final String? assetPath;
@@ -803,7 +810,6 @@ class _HeroImage extends StatelessWidget {
   final IconData fallbackIcon;
   final Color tintSurface;
   final Color deepSurface;
-  final bool alwaysContain;
 
   Widget _fallback(BuildContext context) {
     final ph = Theme.of(context).colorScheme.primary;
@@ -835,7 +841,6 @@ class _HeroImage extends StatelessWidget {
             alignment: Alignment.center,
             width: double.infinity,
             height: double.infinity,
-            alwaysContain: alwaysContain,
             errorBuilder: (context, error, stackTrace) {
               final nw = networkUrl?.trim();
               if (nw != null &&
@@ -846,7 +851,6 @@ class _HeroImage extends StatelessWidget {
                   alignment: Alignment.center,
                   width: double.infinity,
                   height: double.infinity,
-                  alwaysContain: alwaysContain,
                   loadingBuilder: (context, child, progress) {
                     if (progress == null) return child;
                     return ColoredBox(
@@ -875,7 +879,6 @@ class _HeroImage extends StatelessWidget {
             alignment: Alignment.center,
             width: double.infinity,
             height: double.infinity,
-            alwaysContain: alwaysContain,
             loadingBuilder: (context, child, progress) {
               if (progress == null) return child;
               return ColoredBox(
