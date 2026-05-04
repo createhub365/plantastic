@@ -64,15 +64,18 @@ String _effectiveSupabaseAnonKey(Map<String, String> env) {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      systemNavigationBarColor: Color(0xFFF0F7F4),
-      systemNavigationBarIconBrightness: Brightness.dark,
-      systemNavigationBarDividerColor: Color(0xFFE0EBE6),
-    ),
-  );
+  // Flutter web throws UnsupportedError for SystemChrome native chrome APIs.
+  if (!kIsWeb) {
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        systemNavigationBarColor: Color(0xFFF0F7F4),
+        systemNavigationBarIconBrightness: Brightness.dark,
+        systemNavigationBarDividerColor: Color(0xFFE0EBE6),
+      ),
+    );
+  }
 
   AppConfig.envLoadError = null;
   AppConfig.supabaseInitError = null;
