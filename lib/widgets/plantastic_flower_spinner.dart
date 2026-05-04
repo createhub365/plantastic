@@ -9,6 +9,9 @@ const double _kTwoPi = 6.283185307179586;
 /// Tilt each direction (~±42°): left rock then right rock, no full spin.
 const double _kSwingAmpRad = math.pi / 4.25;
 Shader _flowerSweepShader(Rect bounds, double tau) {
+  final safe = bounds.width > 0 && bounds.height > 0
+      ? bounds
+      : const Rect.fromLTWH(0, 0, 1, 1);
   return SweepGradient(
     center: Alignment.center,
     startAngle: -0.35,
@@ -23,7 +26,7 @@ Shader _flowerSweepShader(Rect bounds, double tau) {
       Color(0xFFFF5FA2),
     ],
     stops: const [0.0, 0.16, 0.33, 0.5, 0.66, 0.83, 1.0],
-  ).createShader(bounds);
+  ).createShader(safe);
 }
 
 /// Multicolour flower that **rocks left and right** (no continuous spin).

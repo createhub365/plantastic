@@ -61,8 +61,32 @@ String _effectiveSupabaseAnonKey(Map<String, String> env) {
   return picked != null ? _stripEnvQuotes(picked) : '';
 }
 
+void _reportUnhandled(Object source, Object error, StackTrace? stack) {
+  final msg =
+      '[Plantastic][$source] $error${stack != null ? '\n$stack' : ''}';
+  if (kIsWeb) {
+    // ignore: avoid_print
+    print(msg);
+  } else {
+    debugPrint(msg);
+  }
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    _reportUnhandled(
+      'FlutterError',
+      details.exception,
+      details.stack ?? StackTrace.empty,
+    );
+  };
+  PlatformDispatcher.instance.onError = (error, stack) {
+    _reportUnhandled('PlatformDispatcher', error, stack);
+    return true;
+  };
 
   // Flutter web throws UnsupportedError for SystemChrome native chrome APIs.
   if (!kIsWeb) {

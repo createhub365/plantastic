@@ -131,13 +131,14 @@ class PlantasticAppBar extends StatelessWidget implements PreferredSizeWidget {
                         child: ShaderMask(
                           blendMode: BlendMode.srcIn,
                           shaderCallback: (bounds) {
+                            // Zero-size rects break some web renderers when building shaders.
+                            final w = bounds.width <= 0 ? 1.0 : bounds.width;
+                            final h = bounds.height <= 0 ? 1.0 : bounds.height;
                             return LinearGradient(
                               colors: [brandGreen, brandBright],
                               begin: Alignment.centerLeft,
                               end: Alignment.centerRight,
-                            ).createShader(
-                              Rect.fromLTWH(0, 0, bounds.width, bounds.height),
-                            );
+                            ).createShader(Rect.fromLTWH(0, 0, w, h));
                           },
                           child: Text(
                             'PLANTASTIC',
