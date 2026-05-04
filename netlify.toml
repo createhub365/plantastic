@@ -1,0 +1,4 @@
+# Netlify picks this up from the repo root when you connect GitHub.
+[build]
+  command = "git clone https://github.com/flutter/flutter.git -b stable --depth 1 && export PATH=\"$PATH:$PWD/flutter/bin\" && flutter config --enable-web --no-analytics && flutter precache --web && flutter pub get && echo \"SUPABASE_URL=${SUPABASE_URL}\" > .env && echo \"SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}\" >> .env && flutter build web --release"
+  publish = "build/web"
