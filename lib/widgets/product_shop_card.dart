@@ -6,7 +6,6 @@ import '../data/seed_products.dart';
 import '../models/highlight_tag.dart';
 import '../models/product.dart';
 import '../providers/catalog_notifier.dart';
-import '../layout/responsive.dart';
 import '../theme/app_theme.dart';
 import '../theme/highlight_detail_theme.dart';
 import '../theme/highlight_icons.dart';
@@ -282,10 +281,6 @@ class _ProductShopCardState extends State<ProductShopCard> {
       );
     }
 
-    final subtitle = priceMuted
-        ? 'Details only · checkout disabled'
-        : 'View details →';
-
     final highlights = context.watch<CatalogNotifier>().highlightsForProduct(
       widget.product,
     );
@@ -364,10 +359,8 @@ class _ProductShopCardState extends State<ProductShopCard> {
                         cs: cs,
                         compact: compact,
                         muted: priceMuted,
-                        hover: _hover && !compact,
                         title: widget.product.title,
                         product: widget.product,
-                        subtitle: subtitle,
                         highlights: highlights,
                       ),
                     ),
@@ -444,10 +437,8 @@ class _CardBody extends StatelessWidget {
     required this.cs,
     required this.compact,
     required this.muted,
-    required this.hover,
     required this.title,
     required this.product,
-    required this.subtitle,
     required this.highlights,
   });
 
@@ -455,10 +446,8 @@ class _CardBody extends StatelessWidget {
   final ColorScheme cs;
   final bool compact;
   final bool muted;
-  final bool hover;
   final String title;
   final Product product;
-  final String subtitle;
   final List<HighlightTag> highlights;
 
   @override
@@ -476,9 +465,6 @@ class _CardBody extends StatelessWidget {
         : '${product.kits.length} kits';
 
     final dimGrey = cs.onSurfaceVariant;
-
-    final showDesktopHint =
-        Responsive.isDesktop(context) && hover && !muted && !compact;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -532,7 +518,7 @@ class _CardBody extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppTheme.sans(
-                        fontSize: compact ? 9.5 : 11,
+                        fontSize: compact ? 10.5 : 12,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.06,
                         height: 1.06,
@@ -546,7 +532,7 @@ class _CardBody extends StatelessWidget {
                           TextSpan(
                             text: 'From ',
                             style: AppTheme.sans(
-                              fontSize: compact ? 9 : 10,
+                              fontSize: compact ? 10 : 11,
                               fontWeight: FontWeight.w500,
                               letterSpacing: 0.22,
                               height: 1.06,
@@ -556,7 +542,7 @@ class _CardBody extends StatelessWidget {
                           TextSpan(
                             text: '₹$lowPrice',
                             style: AppTheme.sans(
-                              fontSize: compact ? 10.75 : 12.5,
+                              fontSize: compact ? 12 : 14,
                               fontWeight: FontWeight.w800,
                               letterSpacing: -0.32,
                               height: 1.06,
@@ -594,52 +580,6 @@ class _CardBody extends StatelessWidget {
             ],
           ),
         ],
-        SizedBox(height: compact ? 5 : 6),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Text(
-                subtitle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTheme.sans(
-                  fontSize: compact ? 9.75 : 10.25,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 0.28,
-                  height: 1.32,
-                  color: dimGrey.withValues(alpha: 0.62),
-                ),
-              ),
-            ),
-            if (showDesktopHint)
-              Padding(
-                padding: const EdgeInsets.only(left: 10),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: accent.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: accent.withValues(alpha: 0.32)),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    child: Text(
-                      'View details',
-                      style: AppTheme.sans(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.2,
-                        color: accent,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
       ],
     );
   }
@@ -655,8 +595,8 @@ class _SubtitleHighlightIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tip = tag.title.trim().isEmpty ? tag.pillText : tag.title.trim();
-    final dim = compact ? 14.5 : 16.0;
-    final iconSz = compact ? 9.0 : 10.0;
+    final dim = compact ? 12.5 : 13.5;
+    final iconSz = compact ? 7.75 : 8.5;
     final deco = highlightDetailDecoration(tag.iconKey);
 
     return Tooltip(
