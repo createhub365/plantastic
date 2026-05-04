@@ -39,8 +39,110 @@
     icons use meta + apple-touch-icon above; manifest.json remains in web/ for hosts
     that support public PWA install without that issue.
   -->
+
+  <style>
+    #plantastic-splash {
+      position: fixed;
+      inset: 0;
+      z-index: 999999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 1.25rem;
+      margin: 0;
+      background: linear-gradient(165deg, #f5faf8 0%, #eef6f1 45%, #e8f2ec 100%);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      transition: opacity 0.35s ease-out, visibility 0.35s ease-out;
+    }
+
+    #plantastic-splash.splash-hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .splash-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      text-align: center;
+      padding: 1.5rem;
+    }
+
+    .splash-spinner {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 3px solid rgba(46, 125, 50, 0.18);
+      border-top-color: #2e7d32;
+      animation: plantastic-spin 0.85s linear infinite;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .splash-spinner {
+        animation: none;
+        border-top-color: #2e7d32;
+        opacity: 0.85;
+      }
+    }
+
+    @keyframes plantastic-spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .splash-title {
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #1b4332;
+    }
+
+    .splash-sub {
+      margin: 0;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: rgba(27, 67, 50, 0.62);
+    }
+  </style>
 </head>
 <body>
+  <div id="plantastic-splash" aria-busy="true" aria-live="polite">
+    <div class="splash-inner">
+      <div class="splash-spinner" aria-hidden="true"></div>
+      <p class="splash-title">Plantastic</p>
+      <p class="splash-sub">Loading…</p>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var splash = document.getElementById("plantastic-splash");
+      function hideSplash() {
+        if (!splash || splash.classList.contains("splash-hidden")) return;
+        splash.classList.add("splash-hidden");
+        splash.setAttribute("aria-busy", "false");
+        splash.addEventListener(
+          "transitionend",
+          function () {
+            splash.remove();
+          },
+          { once: true }
+        );
+        window.setTimeout(function () {
+          if (splash && splash.parentNode) splash.remove();
+        }, 600);
+      }
+      window.addEventListener("flutter-first-frame", hideSplash);
+      window.setTimeout(function () {
+        hideSplash();
+      }, 45000);
+    })();
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
