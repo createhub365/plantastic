@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../catalog/catalog_async_guard.dart';
 import '../data/seed_products.dart';
 import '../layout/plantastic_layout.dart';
 import '../models/product.dart';
@@ -71,7 +72,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<CatalogNotifier>().bootstrap();
+      guardCatalogFuture(
+        context.read<CatalogNotifier>().bootstrap(),
+        'ProductDetail.bootstrap',
+      );
       _entrance.forward();
     });
   }

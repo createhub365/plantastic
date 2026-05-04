@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../catalog/catalog_async_guard.dart';
 import '../config.dart';
 import '../data/seed_products.dart';
 import '../providers/cart_provider.dart';
@@ -30,7 +31,10 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<CatalogNotifier>().refresh();
+      guardCatalogFuture(
+        context.read<CatalogNotifier>().refresh(),
+        'HomeScreen.refresh',
+      );
     });
   }
 
@@ -371,7 +375,10 @@ class _CatalogStatusBanner extends StatelessWidget {
                 TextButton(
                   onPressed: catalog.loading
                       ? null
-                      : () => context.read<CatalogNotifier>().refresh(),
+                      : () => guardCatalogFuture(
+                          context.read<CatalogNotifier>().refresh(),
+                          'HomeScreen.retry',
+                        ),
                   child: catalog.loading
                       ? PlantasticLoading.inline
                       : const Text('Retry'),

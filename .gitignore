@@ -36,6 +36,7 @@ migrate_working_dir/
 
 # Flutter SDK clone on CI (Netlify)
 .flutter-sdk/
+dart_defines.json
 
 # Symbolication related
 app.*.symbols
