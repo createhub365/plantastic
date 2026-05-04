@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_theme.dart';
+import '../layout/plantastic_layout.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_text.dart';
+import 'glass_card.dart';
 
 class PlantasticAppBar extends StatelessWidget implements PreferredSizeWidget {
   const PlantasticAppBar({
@@ -10,10 +13,13 @@ class PlantasticAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.brandSubtitle,
     this.replacementTitle,
     this.replacementToolbarHeight,
+    /// Shop home: blur panel behind toolbar over gradient (icons/title stay white).
+    this.glassChrome = false,
   });
 
   final List<Widget>? actions;
   final bool showBack;
+  final bool glassChrome;
 
   /// Shown directly under the logo + PLANTASTIC row when non-null (e.g. "Admin").
   final String? brandSubtitle;
@@ -44,42 +50,63 @@ class PlantasticAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final lang = MaterialLocalizations.of(context);
-    final brandGreen = AppTheme.forest;
-    final brandBright = AppTheme.forestBright;
+    final onGlass = glassChrome;
+
+    final chromeFg =
+        onGlass ? Colors.white : theme.colorScheme.onSurface.withValues(alpha: 0.94);
 
     return AppBar(
       toolbarHeight: preferredSize.height,
       centerTitle: false,
       elevation: 0,
-      scrolledUnderElevation: 1,
-      shadowColor: Colors.black.withValues(alpha: 0.06),
+      scrolledUnderElevation: 0,
+      shadowColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
-      backgroundColor: Colors.white,
-      foregroundColor: theme.colorScheme.onSurface,
+      backgroundColor: Colors.transparent,
+      foregroundColor: onGlass ? Colors.white : theme.colorScheme.onSurface,
+      iconTheme: IconThemeData(
+        color: onGlass ? Colors.white : theme.colorScheme.onSurface,
+        size: 24,
+      ),
       titleSpacing: showBack ? 4 : 10,
       leadingWidth: showBack ? 48 : null,
       shape: Border(
         bottom: BorderSide(
-          color: theme.colorScheme.outline.withValues(alpha: 0.22),
+          color: onGlass
+              ? Colors.white.withValues(alpha: 0.28)
+              : AppColors.border.withValues(alpha: 0.75),
         ),
       ),
+      flexibleSpace: onGlass
+          ? LayoutBuilder(
+              builder: (context, constraints) {
+                return GlassCard(
+                  borderRadius: 0,
+                  padding: EdgeInsets.zero,
+                  sigma: 14,
+                  child: SizedBox(
+                    width: constraints.maxWidth,
+                    height: constraints.maxHeight,
+                  ),
+                );
+              },
+            )
+          : null,
       leading: showBack
           ? IconButton(
               tooltip: lang.backButtonTooltip,
               style:
                   IconButton.styleFrom(
-                    foregroundColor: theme.colorScheme.onSurface.withValues(
-                      alpha: 0.94,
-                    ),
+                    foregroundColor: chromeFg,
                     visualDensity: VisualDensity.compact,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ).copyWith(
                     overlayColor: WidgetStateProperty.resolveWith((states) {
                       if (states.contains(WidgetState.pressed)) {
-                        return AppTheme.mintGlow.withValues(alpha: 0.12);
+                        return Colors.white.withValues(alpha: onGlass ? 0.22 : 0.08);
                       }
                       if (states.contains(WidgetState.hovered)) {
-                        return AppTheme.mintGlow.withValues(alpha: 0.06);
+                        return Colors.white.withValues(alpha: onGlass ? 0.12 : 0.05);
                       }
                       return null;
                     }),
@@ -95,10 +122,13 @@ class PlantasticAppBar extends StatelessWidget implements PreferredSizeWidget {
             )
           : LayoutBuilder(
               builder: (context, constraints) {
-                final w = constraints.maxWidth;
-                final maxLogoW = (!w.isFinite || w <= 0)
+                final tw = constraints.maxWidth;
+                final compactNav = PlantasticLayout.compactPhone(context);
+                final logoDisplayH = compactNav ? 46.0 : _logoMaxHeight.toDouble();
+                final brandGap = compactNav ? 8.0 : 12.0;
+                final maxLogoW = (!tw.isFinite || tw <= 0)
                     ? 140.0
-                    : (w * 0.44).clamp(88.0, 190.0);
+                    : (tw * (compactNav ? 0.4 : 0.44)).clamp(72.0, 190.0);
 
                 Widget brandRow = Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -108,7 +138,7 @@ class PlantasticAppBar extends StatelessWidget implements PreferredSizeWidget {
                         constraints: BoxConstraints(maxWidth: maxLogoW),
                         child: Image.asset(
                           'assets/Logo.png',
-                          height: _logoMaxHeight,
+                          height: logoDisplayH,
                           fit: BoxFit.contain,
                           alignment: Alignment.centerLeft,
                           filterQuality: FilterQuality.high,
@@ -117,40 +147,24 @@ class PlantasticAppBar extends StatelessWidget implements PreferredSizeWidget {
                           errorBuilder: (context, error, stackTrace) {
                             return Icon(
                               Icons.eco_rounded,
-                              size: _logoMaxHeight * 0.76,
-                              color: theme.colorScheme.primary,
+                              size: logoDisplayH * 0.76,
+                              color: onGlass ? Colors.white : theme.colorScheme.primary,
                             );
                           },
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: brandGap),
                     Expanded(
                       child: Align(
                         alignment: Alignment.centerLeft,
-                        child: ShaderMask(
-                          blendMode: BlendMode.srcIn,
-                          shaderCallback: (bounds) {
-                            // Zero-size rects break some web renderers when building shaders.
-                            final w = bounds.width <= 0 ? 1.0 : bounds.width;
-                            final h = bounds.height <= 0 ? 1.0 : bounds.height;
-                            return LinearGradient(
-                              colors: [brandGreen, brandBright],
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                            ).createShader(Rect.fromLTWH(0, 0, w, h));
-                          },
-                          child: Text(
-                            'PLANTASTIC',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTheme.serifDisplay(
-                              fontSize: 26.5,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.38,
-                              height: 1.05,
-                              color: Colors.white,
-                            ),
+                        child: Text(
+                          'Plantastic 🌿',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppText.heading.copyWith(
+                            fontSize: compactNav ? 18 : 20,
+                            color: onGlass ? Colors.white : AppColors.textPrimary,
                           ),
                         ),
                       ),
@@ -184,7 +198,9 @@ class PlantasticAppBar extends StatelessWidget implements PreferredSizeWidget {
                           style: theme.textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w800,
                             letterSpacing: -0.06,
-                            color: AppTheme.forestBright,
+                            color: onGlass
+                                ? Colors.white.withValues(alpha: 0.92)
+                                : AppColors.primary,
                           ),
                         ),
                       ),

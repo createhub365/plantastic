@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../layout/plantastic_layout.dart';
 import '../providers/cart_provider.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_colors.dart';
+import 'glass_card.dart';
 
-/// Floating-style cart banner (items · total · VIEW CART).
+/// Floating cart banner — glass shell + solid primary CTA.
 class CartStripBar extends StatelessWidget {
   const CartStripBar({super.key, this.margin});
 
@@ -17,122 +19,129 @@ class CartStripBar extends StatelessWidget {
       builder: (context, cart, _) {
         if (cart.itemCount == 0) return const SizedBox.shrink();
 
-        final cs = Theme.of(context).colorScheme;
         final textTheme = Theme.of(context).textTheme;
 
         final itemLabel = cart.itemCount == 1
             ? '1 item'
             : '${cart.itemCount} items';
 
-        Widget bar = Container(
+        Widget bar = DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.mintGlow.withValues(alpha: 0.28),
-                blurRadius: 24,
+                color: Colors.black.withValues(alpha: 0.22),
+                blurRadius: 22,
                 offset: const Offset(0, 10),
               ),
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.4),
-                blurRadius: 14,
-                offset: const Offset(0, 6),
+                color: Colors.white.withValues(alpha: 0.12),
+                blurRadius: 18,
+                offset: const Offset(0, -2),
               ),
             ],
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(18),
+          child: GlassCard(
+            borderRadius: 18,
+            blur: true,
+            sigma: 14,
+            padding: EdgeInsets.symmetric(
+              horizontal: PlantasticLayout.compactPhone(context) ? 12 : 16,
+              vertical: PlantasticLayout.compactPhone(context) ? 12 : 14,
+            ),
             child: Material(
               color: Colors.transparent,
-              child: Ink(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      cs.primaryContainer,
-                      AppTheme.forestBright,
-                      AppTheme.forest.withValues(alpha: 0.92),
-                    ],
-                  ),
-                ),
-                child: InkWell(
-                  splashColor: AppTheme.mintGlow.withValues(alpha: 0.22),
-                  highlightColor: Colors.white.withValues(alpha: 0.06),
-                  onTap: () => Navigator.of(context).pushNamed('/cart'),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                final cramped = constraints.maxWidth < 320;
+                final compact = cramped ||
+                    PlantasticLayout.compactPhone(context);
+                return Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: () =>
+                            Navigator.of(context).pushNamed('/cart'),
+                        borderRadius: BorderRadius.circular(12),
+                        splashColor: Colors.white.withValues(alpha: 0.14),
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 8),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
                                 itemLabel,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: textTheme.titleSmall?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.95),
-                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white.withValues(alpha: 0.96),
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: compact ? 13 : null,
                                 ),
                               ),
                               Text(
                                 '₹${cart.grandTotal}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: textTheme.titleLarge?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: -0.3,
-                                ),
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: -0.3,
+                                    ) ??
+                                    TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: compact ? 20 : 22,
+                                      letterSpacing: -0.3,
+                                    ),
                               ),
                             ],
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: cs.surface,
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.12),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'VIEW CART',
-                                style: textTheme.labelLarge?.copyWith(
-                                  color: cs.primary,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.5,
-                                  fontSize: 13,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Icon(
-                                Icons.arrow_forward_ios_rounded,
-                                size: 12,
-                                color: cs.primary,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-              ),
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        elevation: 2,
+                        shadowColor: Colors.black.withValues(alpha: 0.25),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: compact ? 12 : 16,
+                          vertical: compact ? 10 : 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () =>
+                          Navigator.of(context).pushNamed('/cart'),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            compact ? 'CART' : 'VIEW CART',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.35,
+                              fontSize: cramped ? 11 : 13,
+                            ),
+                          ),
+                          SizedBox(width: compact ? 4 : 6),
+                          Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: compact ? 11 : 12,
+                            color: Colors.white,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
+          ),
           ),
         );
 

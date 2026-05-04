@@ -1,6 +1,6 @@
 import 'dart:math';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -76,7 +76,11 @@ class ProductImageUploadService {
         : preferredExt;
     final safePid = productId.replaceAll(RegExp(r'[^\w\-]'), '');
     var uploadBytes = bytes;
-    final normalized = normalizeProductImageToSquare1080Jpeg(bytes);
+    // Decode + resize JPEG is CPU-heavy — keep UI responsive during admin Save.
+    final normalized = await compute(
+      normalizeProductImageToSquare1080Jpeg,
+      bytes,
+    );
     if (normalized != null) {
       uploadBytes = normalized;
       ext = 'jpg';

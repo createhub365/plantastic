@@ -2,6 +2,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'responsive.dart';
+import 'screen_breakpoints.dart';
+
 /// Shared breakpoints for shop + admin (browser / window resize).
 abstract final class PlantasticLayout {
   PlantasticLayout._();
@@ -12,9 +15,37 @@ abstract final class PlantasticLayout {
   static double heightOf(BuildContext context) =>
       MediaQuery.sizeOf(context).height;
 
-  /// Side inset for page content (scales with viewport).
-  static double gutter(BuildContext context) =>
-      (widthOf(context) * 0.035).clamp(12.0, 48.0);
+  /// Narrow phones (~iPhone SE) — tighter UI, single-column shop grid helpers.
+  static const double breakpointCompactPhone = 380;
+
+  /// Below this width the shop catalogue uses **one column** cards.
+  static double get breakpointShopSingleColumn =>
+      ScreenBreakpoints.narrowShop.toDouble();
+
+  static bool compactPhone(BuildContext context) =>
+      widthOf(context) < breakpointCompactPhone;
+
+  static bool tabletOrWider(BuildContext context) =>
+      widthOf(context) >= 720;
+
+  /// Shop catalogue columns — uses [Responsive.shopCrossAxisCount].
+  static int shopGridCrossAxisCount(BuildContext context) =>
+      Responsive.shopCrossAxisCount(context);
+
+  /// Side inset for page content (scales with viewport — tighter on small phones).
+  static double gutter(BuildContext context) {
+    final w = widthOf(context);
+    if (w < 340) return 10.0;
+    if (w < breakpointCompactPhone) return 12.0;
+    return (w * 0.035).clamp(12.0, 48.0);
+  }
+
+  static double shopGridCrossSpacing(BuildContext context) =>
+      compactPhone(context) ? 10.0 : Responsive.sectionGap(context);
+
+  /// Vertical gap between catalogue grid rows.
+  static double shopGridMainSpacing(BuildContext context) =>
+      compactPhone(context) ? 10.0 : Responsive.sectionGap(context);
 
   /// Horizontal padding scales slightly with viewport (mobile → ultra-wide).
   static EdgeInsets pageHorizontalPadding(BuildContext context) {
@@ -25,8 +56,11 @@ abstract final class PlantasticLayout {
   /// Readable column on tablets / desktop; full-bleed on narrow phones.
   static double contentMaxWidth(BuildContext context) {
     final w = widthOf(context);
-    if (w < 600) return w;
-    return (w * 0.92).clamp(520.0, 1040.0);
+    if (Responsive.isMobile(context)) return w;
+    if (Responsive.isTablet(context)) {
+      return (w * 0.92).clamp(520.0, 960.0);
+    }
+    return (w * 0.95).clamp(520.0, 1200.0);
   }
 
   /// Wraps [child] in a centered column capped at [contentMaxWidth].
@@ -41,12 +75,6 @@ abstract final class PlantasticLayout {
     );
   }
 
-  /// Shop catalogue: spacing between the two tiles in each row ([Row]),
-  /// and vertical space between successive rows ([SliverList]).
-  static const double shopGridCrossSpacing = 12.0;
-  static const double shopGridMainSpacing = 12.0;
-
-  /// Detail hero **square** side (logical px): content column width − gutters.
   /// Uploaded images are normalized to a 1080×1080 px square canvas in code.
   static double detailHeroSquareSide(BuildContext context) {
     final g = gutter(context);

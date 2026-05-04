@@ -6,11 +6,14 @@ import '../data/seed_products.dart';
 import '../models/cart_item.dart';
 import '../models/product.dart';
 import '../layout/plantastic_layout.dart';
+import '../layout/responsive.dart';
 import '../providers/cart_provider.dart';
 import '../providers/catalog_notifier.dart';
 import '../widgets/plantastic_app_bar.dart';
 import '../widgets/plantastic_loading.dart';
 import '../widgets/plantastic_scroll_behavior.dart';
+import '../widgets/decode_aware_product_image.dart';
+import '../widgets/shop_navigation_rail.dart';
 import 'address_screen.dart';
 
 /// Returns a shopper-facing message when checkout must be blocked.
@@ -34,10 +37,24 @@ class CartScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final desktop = Responsive.isDesktop(context);
+
+    Widget wrapBody(Widget child) {
+      if (!desktop) return child;
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const ShopNavigationRail(section: ShopNavSection.cart),
+          Expanded(child: child),
+        ],
+      );
+    }
+
     return Scaffold(
       appBar: const PlantasticAppBar(showBack: true),
-      body: Consumer2<CartNotifier, CatalogNotifier>(
-        builder: (context, cart, catalog, _) {
+      body: wrapBody(
+        Consumer2<CartNotifier, CatalogNotifier>(
+          builder: (context, cart, catalog, _) {
           if (cart.lines.isEmpty) {
             return Center(
               child: Column(
@@ -69,6 +86,49 @@ class CartScreen extends StatelessWidget {
           final blockReason = checkoutBlockReason(cart, catalog);
           final n = cart.lines.length;
 
+          if (desktop) {
+            return PlantasticLayout.constrainedBody(
+              context,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(g, 16, g, 24),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 7,
+                      child: ListView.separated(
+                        physics: plantasticViewportPhysics,
+                        itemCount: n,
+                        separatorBuilder: (context, _) =>
+                            const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final line = cart.lines[index];
+                          return _CartLineTile(
+                            line: line,
+                            cart: cart,
+                            liveProduct:
+                                catalog.byId(line.product.id) ?? line.product,
+                          );
+                        },
+                      ),
+                    ),
+                    SizedBox(width: Responsive.sectionGap(context)),
+                    Expanded(
+                      flex: 3,
+                      child: SingleChildScrollView(
+                        physics: plantasticViewportPhysics,
+                        child: _CartCheckoutColumn(
+                          cart: cart,
+                          blockReason: blockReason,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
           return PlantasticLayout.constrainedBody(
             context,
             child: ListView.builder(
@@ -89,76 +149,166 @@ class CartScreen extends StatelessWidget {
                   );
                 }
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Divider(
-                      height: 36,
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.outline.withValues(alpha: 0.25),
-                    ),
-                    Text(
-                      'Review & checkout',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Confirm kits and totals, then enter delivery details.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        height: 1.38,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Total due',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        Text(
-                          '₹${cart.grandTotal}',
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 18),
-                    if (blockReason != null) ...[
-                      Text(
-                        blockReason,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.orangeAccent.withValues(alpha: 0.92),
-                          height: 1.4,
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                    ],
-                    FilledButton(
-                      onPressed: blockReason != null
-                          ? null
-                          : () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => const AddressScreen(),
-                                ),
-                              );
-                            },
-                      child: const Text('Continue to address'),
-                    ),
-                  ],
+                return _CartCheckoutColumn(
+                  cart: cart,
+                  blockReason: blockReason,
                 );
               },
             ),
           );
         },
+      ),
+      ),
+    );
+  }
+}
+
+/// Checkout summary block (trust strip + totals + CTA).
+class _CartCheckoutColumn extends StatelessWidget {
+  const _CartCheckoutColumn({
+    required this.cart,
+    required this.blockReason,
+  });
+
+  final CartNotifier cart;
+  final String? blockReason;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const _CartTrustStrip(),
+        Divider(
+          height: 36,
+          color: Theme.of(
+            context,
+          ).colorScheme.outline.withValues(alpha: 0.25),
+        ),
+        Text(
+          'Review & checkout',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Confirm kits and totals, then enter delivery details.',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                height: 1.38,
+              ),
+        ),
+        const SizedBox(height: 20),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final stacked = constraints.maxWidth < 360;
+            final totalLabel = Text(
+              'Total due',
+              style: Theme.of(context).textTheme.titleLarge,
+            );
+            final totalAmt = Text(
+              '₹${cart.grandTotal}',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+            );
+            if (stacked) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  totalLabel,
+                  const SizedBox(height: 10),
+                  totalAmt,
+                ],
+              );
+            }
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [totalLabel, totalAmt],
+            );
+          },
+        ),
+        const SizedBox(height: 18),
+        if (blockReason != null) ...[
+          Text(
+            blockReason!,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.orangeAccent.withValues(alpha: 0.92),
+                  height: 1.4,
+                ),
+          ),
+          const SizedBox(height: 14),
+        ],
+        FilledButton(
+          onPressed: blockReason != null
+              ? null
+              : () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const AddressScreen(),
+                    ),
+                  );
+                },
+          child: const Text('Continue to address'),
+        ),
+      ],
+    );
+  }
+}
+
+/// Shop reassurance row (mirrors tutorial “trust” block; themed for Plantastic).
+class _CartTrustStrip extends StatelessWidget {
+  const _CartTrustStrip();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    Widget row(IconData icon, String text) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              icon,
+              size: 22,
+              color: cs.primary.withValues(alpha: 0.88),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                text,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: cs.onSurface.withValues(alpha: 0.78),
+                      height: 1.38,
+                    ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.42),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: cs.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            row(Icons.verified_outlined, 'Fresh seeds guarantee'),
+            row(Icons.local_shipping_outlined, 'Fast delivery'),
+          ],
+        ),
       ),
     );
   }
@@ -321,9 +471,10 @@ class _CartLineThumb extends StatelessWidget {
       return SizedBox(
         width: _side,
         height: _side,
-        child: Image.network(
-          ref,
-          fit: BoxFit.cover,
+        child: DecodeAwareProductImage(
+          image: NetworkImage(ref),
+          width: _side,
+          height: _side,
           alignment: Alignment.center,
           loadingBuilder: (context, child, progress) {
             if (progress == null) return child;
@@ -340,18 +491,20 @@ class _CartLineThumb extends StatelessWidget {
     return SizedBox(
       width: _side,
       height: _side,
-      child: Image.asset(
-        ref,
-        fit: BoxFit.cover,
+      child: DecodeAwareProductImage(
+        image: AssetImage(ref),
+        width: _side,
+        height: _side,
         alignment: Alignment.center,
         errorBuilder: (context, error, stackTrace) {
           final nu = product.effectiveNetworkCoverUrl?.trim();
           if (nu != null &&
               nu.isNotEmpty &&
               CatalogAssets.looksLikeUsableShopRemoteUrl(nu)) {
-            return Image.network(
-              nu,
-              fit: BoxFit.cover,
+            return DecodeAwareProductImage(
+              image: NetworkImage(nu),
+              width: _side,
+              height: _side,
               alignment: Alignment.center,
               errorBuilder: (c, e, s) => _fallback(context),
             );

@@ -1,21 +1,24 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../catalog/catalog_async_guard.dart';
 import '../data/seed_products.dart';
 import '../layout/plantastic_layout.dart';
+import '../layout/responsive.dart';
 import '../models/product.dart';
 import '../models/highlight_tag.dart';
 import '../models/product_kit_line.dart';
 import '../providers/catalog_notifier.dart';
 import '../providers/cart_provider.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_motion.dart';
 import '../theme/app_theme.dart';
 import '../theme/highlight_detail_theme.dart';
 import '../theme/highlight_icons.dart';
 import '../theme/kit_inclusion_icons.dart';
 import '../widgets/cart_strip_bar.dart';
+import '../widgets/cart_toolbar_icon_button.dart';
 import '../widgets/plantastic_app_bar.dart';
 import '../widgets/plantastic_loading.dart';
 import '../widgets/plantastic_scroll_behavior.dart';
@@ -103,6 +106,36 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
     final sel = _selectedKitLineId;
     if (sel != null && product.kitForLineMaybe(sel) != null) return sel;
     return product.kits.first.lineId;
+  }
+
+  void _showAddedToCartFeedback(BuildContext context) {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+    messenger.hideCurrentSnackBar();
+    final cs = Theme.of(context).colorScheme;
+    messenger.showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        duration: AppMotion.snackBarShort,
+        margin: const EdgeInsets.all(16),
+        backgroundColor: cs.primary,
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Added to cart 🌱',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -216,16 +249,58 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
     final carouselUrls = carouselMemory == null
         ? product.urlsForDetailCarousel(lineId)
         : product.urlsForCarousel(lineId);
-    final carouselBlock = ProductImageCarousel(
-      urls: carouselUrls,
-      side: PlantasticLayout.detailHeroSquareSide(context),
-      autoInterval: const Duration(seconds: 4),
-      borderRadius: BorderRadius.circular(18),
-      previewMemoryAtIndex: carouselMemory,
-      categoryIconFallback: product.category == kCategoryFlowerSeed
-          ? Icons.local_florist_outlined
-          : Icons.spa_outlined,
-    );
+
+    final desktopLayout = Responsive.isDesktop(context);
+    final heroSide = PlantasticLayout.detailHeroSquareSide(context);
+
+    ProductImageCarousel carouselFor(double side) {
+      return ProductImageCarousel(
+        urls: carouselUrls,
+        side: side,
+        autoInterval: const Duration(seconds: 4),
+        borderRadius: BorderRadius.circular(18),
+        previewMemoryAtIndex: carouselMemory,
+        categoryIconFallback: product.category == kCategoryFlowerSeed
+            ? Icons.local_florist_outlined
+            : Icons.spa_outlined,
+      );
+    }
+
+    Widget carouselShell(double side) {
+      final inner = carouselFor(side);
+      if (!draftPreview) {
+        return Hero(
+          tag: AppTheme.heroProductCover(product.id),
+          child: Material(
+            color: Colors.transparent,
+            elevation: 10,
+            shadowColor: Colors.black.withValues(
+              alpha: 0.22,
+            ),
+            borderRadius: BorderRadius.circular(18),
+            clipBehavior: Clip.antiAlias,
+            child: inner,
+          ),
+        );
+      }
+      return Material(
+        color: Colors.transparent,
+        elevation: 10,
+        shadowColor: Colors.black.withValues(alpha: 0.22),
+        borderRadius: BorderRadius.circular(18),
+        clipBehavior: Clip.antiAlias,
+        child: inner,
+      );
+    }
+
+    final carouselLead = desktopLayout
+        ? LayoutBuilder(
+            builder: (context, c) {
+              final side = c.maxWidth.clamp(200.0, 560.0);
+              return carouselShell(side);
+            },
+          )
+        : carouselShell(heroSide);
 
     return Scaffold(
       appBar: PlantasticAppBar(
@@ -233,11 +308,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
         actions: draftPreview
             ? null
             : [
-                IconButton(
-                  tooltip: 'Cart',
-                  icon: const Icon(Icons.shopping_cart_outlined),
-                  onPressed: () => Navigator.of(context).pushNamed('/cart'),
-                ),
+                const CartToolbarIconButton(tooltip: 'Cart'),
               ],
       ),
       body: DecoratedBox(
@@ -301,30 +372,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                             ),
                             const SizedBox(height: 10),
                           ],
-                          if (!draftPreview)
-                            Hero(
-                              tag: AppTheme.heroProductCover(product.id),
-                              child: Material(
-                                color: Colors.transparent,
-                                elevation: 10,
-                                shadowColor: Colors.black.withValues(
-                                  alpha: 0.22,
-                                ),
-                                borderRadius: BorderRadius.circular(18),
-                                clipBehavior: Clip.antiAlias,
-                                child: carouselBlock,
-                              ),
-                            )
-                          else
-                            Material(
-                              color: Colors.transparent,
-                              elevation: 10,
-                              shadowColor: Colors.black.withValues(alpha: 0.22),
-                              borderRadius: BorderRadius.circular(18),
-                              clipBehavior: Clip.antiAlias,
-                              child: carouselBlock,
-                            ),
-                          const SizedBox(height: 18),
+                          _ResponsiveDetailPane(
+                            carousel: carouselLead,
+                            meta: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
                           _DetailStagger(
                             animation: _entrance,
                             index: 0,
@@ -552,6 +604,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                               ],
                             ),
                           ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -637,6 +692,167 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                                 .priceForKitLine(lineId);
                                             final lineTotal = unit * qty;
 
+                                            final addStyle =
+                                                FilledButton.styleFrom(
+                                              backgroundColor:
+                                                  canBuy ? accent : null,
+                                              foregroundColor: Colors.white
+                                                  .withValues(
+                                                alpha: canBuy ? 1.0 : 0.5,
+                                              ),
+                                              elevation: canBuy ? 2 : 0,
+                                              shadowColor: accent.withValues(
+                                                alpha: 0.35,
+                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 18,
+                                                vertical: 13,
+                                              ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                            );
+                                            final buyNowStyle =
+                                                FilledButton.styleFrom(
+                                              backgroundColor: canBuy
+                                                  ? AppColors.textPrimary
+                                                  : cs.onSurface.withValues(
+                                                      alpha: 0.22,
+                                                    ),
+                                              foregroundColor: canBuy
+                                                  ? Colors.white
+                                                  : cs.onSurface.withValues(
+                                                      alpha: 0.38,
+                                                    ),
+                                              elevation: canBuy ? 1 : 0,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 18,
+                                                vertical: 13,
+                                              ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                            );
+
+                                            if (qty < 1) {
+                                              return Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.stretch,
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      Text(
+                                                        product
+                                                            .kitForLine(lineId)
+                                                            .label,
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .labelSmall
+                                                            ?.copyWith(
+                                                              color: cs
+                                                                  .onSurfaceVariant,
+                                                            ),
+                                                      ),
+                                                      const SizedBox(height: 4),
+                                                      Text(
+                                                        '₹$unit',
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .headlineSmall
+                                                            ?.copyWith(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w800,
+                                                              color: accent,
+                                                              letterSpacing:
+                                                                  -0.3,
+                                                            ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  const SizedBox(height: 12),
+                                                  Row(
+                                                    children: [
+                                                      Expanded(
+                                                        child: FilledButton(
+                                                          style: addStyle,
+                                                          onPressed: canBuy
+                                                              ? () {
+                                                                  HapticFeedback
+                                                                      .lightImpact();
+                                                                  cart.addOrIncrement(
+                                                                    product,
+                                                                    lineId,
+                                                                  );
+                                                                  _showAddedToCartFeedback(
+                                                                      context);
+                                                                }
+                                                              : null,
+                                                          child: Text(
+                                                            canBuy
+                                                                ? 'Add to cart'
+                                                                : 'Sold out',
+                                                            style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w800,
+                                                              letterSpacing:
+                                                                  0.2,
+                                                              color: canBuy
+                                                                  ? Colors.white
+                                                                  : null,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 12),
+                                                      Expanded(
+                                                        child: FilledButton(
+                                                          style: buyNowStyle,
+                                                          onPressed: canBuy
+                                                              ? () {
+                                                                  HapticFeedback
+                                                                      .lightImpact();
+                                                                  cart.addOrIncrement(
+                                                                    product,
+                                                                    lineId,
+                                                                  );
+                                                                  _showAddedToCartFeedback(
+                                                                      context);
+                                                                  Navigator.of(
+                                                                          context)
+                                                                      .pushNamed(
+                                                                          '/cart');
+                                                                }
+                                                              : null,
+                                                          child: const Text(
+                                                            'Buy now',
+                                                            style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w800,
+                                                              letterSpacing:
+                                                                  0.2,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              );
+                                            }
+
                                             return Row(
                                               crossAxisAlignment:
                                                   CrossAxisAlignment.center,
@@ -662,128 +878,68 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                                             ),
                                                       ),
                                                       const SizedBox(height: 4),
-                                                      if (qty < 1)
-                                                        Text(
-                                                          '₹$unit',
-                                                          style: Theme.of(context)
-                                                              .textTheme
-                                                              .headlineSmall
-                                                              ?.copyWith(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w800,
-                                                                color: accent,
-                                                                letterSpacing:
-                                                                    -0.3,
-                                                              ),
-                                                        )
-                                                      else
-                                                        Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          children: [
-                                                            Text(
-                                                              '₹$lineTotal',
-                                                              style: Theme.of(context)
-                                                                  .textTheme
-                                                                  .headlineSmall
-                                                                  ?.copyWith(
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .w800,
-                                                                    color:
-                                                                        accent,
-                                                                    letterSpacing:
-                                                                        -0.3,
-                                                                  ),
+                                                      Text(
+                                                        '₹$lineTotal',
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .headlineSmall
+                                                            ?.copyWith(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w800,
+                                                              color: accent,
+                                                              letterSpacing:
+                                                                  -0.3,
                                                             ),
-                                                            Text(
-                                                              '₹$unit each × $qty',
-                                                              style: Theme.of(context)
-                                                                  .textTheme
-                                                                  .bodySmall
-                                                                  ?.copyWith(
-                                                                    color: cs
-                                                                        .onSurfaceVariant,
-                                                                  ),
+                                                      ),
+                                                      Text(
+                                                        '₹$unit each × $qty',
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .bodySmall
+                                                            ?.copyWith(
+                                                              color: cs
+                                                                  .onSurfaceVariant,
                                                             ),
-                                                          ],
-                                                        ),
+                                                      ),
                                                     ],
                                                   ),
                                                 ),
-                                                if (qty < 1)
-                                                  FilledButton(
-                                                    style: FilledButton.styleFrom(
-                                                      backgroundColor: canBuy
-                                                          ? accent
-                                                          : null,
-                                                      foregroundColor: Colors
-                                                          .white
-                                                          .withValues(
-                                                            alpha: canBuy
-                                                                ? 1.0
-                                                                : 0.5,
-                                                          ),
-                                                      elevation: canBuy ? 2 : 0,
-                                                      shadowColor: accent
-                                                          .withValues(
-                                                            alpha: 0.35,
-                                                          ),
-                                                      padding:
-                                                          const EdgeInsets.symmetric(
-                                                            horizontal: 26,
-                                                            vertical: 13,
-                                                          ),
-                                                      shape: RoundedRectangleBorder(
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              14,
-                                                            ),
-                                                      ),
+                                                FoodQtyStepper(
+                                                  quantity: qty,
+                                                  incrementEnabled: canBuy,
+                                                  onDecrement: () {
+                                                    HapticFeedback.lightImpact();
+                                                    cart.setQuantity(
+                                                      product,
+                                                      lineId,
+                                                      qty - 1,
+                                                    );
+                                                  },
+                                                  onIncrement: () {
+                                                    HapticFeedback.lightImpact();
+                                                    cart.setQuantity(
+                                                      product,
+                                                      lineId,
+                                                      qty + 1,
+                                                    );
+                                                  },
+                                                ),
+                                                TextButton(
+                                                  onPressed: () {
+                                                    HapticFeedback.lightImpact();
+                                                    Navigator.of(context)
+                                                        .pushNamed('/cart');
+                                                  },
+                                                  child: Text(
+                                                    'Checkout',
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      color: accent,
                                                     ),
-                                                    onPressed: canBuy
-                                                        ? () {
-                                                            cart.addOrIncrement(
-                                                              product,
-                                                              lineId,
-                                                            );
-                                                          }
-                                                        : null,
-                                                    child: Text(
-                                                      canBuy
-                                                          ? 'Add to cart'
-                                                          : 'Sold out',
-                                                      style: TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.w800,
-                                                        letterSpacing: 0.35,
-                                                        color: canBuy
-                                                            ? Colors.white
-                                                            : null,
-                                                      ),
-                                                    ),
-                                                  )
-                                                else
-                                                  FoodQtyStepper(
-                                                    quantity: qty,
-                                                    incrementEnabled: canBuy,
-                                                    onDecrement: () {
-                                                      cart.setQuantity(
-                                                        product,
-                                                        lineId,
-                                                        qty - 1,
-                                                      );
-                                                    },
-                                                    onIncrement: () {
-                                                      cart.setQuantity(
-                                                        product,
-                                                        lineId,
-                                                        qty + 1,
-                                                      );
-                                                    },
                                                   ),
+                                                ),
                                               ],
                                             );
                                           },
@@ -869,6 +1025,39 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
             ),
           ),
         ),
+      ],
+    );
+  }
+}
+
+class _ResponsiveDetailPane extends StatelessWidget {
+  const _ResponsiveDetailPane({
+    required this.carousel,
+    required this.meta,
+  });
+
+  final Widget carousel;
+  final Widget meta;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!Responsive.isDesktop(context)) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          carousel,
+          const SizedBox(height: 18),
+          meta,
+        ],
+      );
+    }
+    final gap = Responsive.sectionGap(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: carousel),
+        SizedBox(width: gap),
+        Expanded(child: meta),
       ],
     );
   }

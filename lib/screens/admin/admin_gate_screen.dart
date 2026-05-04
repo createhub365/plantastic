@@ -138,7 +138,8 @@ class _AdminGateScreenState extends State<AdminGateScreen> {
                   child: Builder(
                     builder: (ctx) {
                       final scheme = Theme.of(ctx).colorScheme;
-                      return Card(
+                      return DecoratedBox(
+                        decoration: AdminShell.cardDecoration(scheme),
                         child: Padding(
                           padding: const EdgeInsets.all(24),
                           child: Column(
@@ -223,7 +224,10 @@ class _AdminGateScreenState extends State<AdminGateScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (user == null) ...[
-                      Card(
+                      DecoratedBox(
+                        decoration: AdminShell.cardDecoration(
+                          Theme.of(context).colorScheme,
+                        ),
                         child: Padding(
                           padding: const EdgeInsets.all(22),
                           child: Column(
@@ -318,7 +322,10 @@ class _AdminGateScreenState extends State<AdminGateScreen> {
                           ),
                         )
                       else if (!_isAdmin)
-                        Card(
+                        DecoratedBox(
+                          decoration: AdminShell.cardDecoration(
+                            Theme.of(context).colorScheme,
+                          ),
                           child: Padding(
                             padding: const EdgeInsets.all(16),
                             child: Column(

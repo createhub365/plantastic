@@ -8,12 +8,20 @@ import '../data/seed_products.dart';
 import '../models/highlight_tag.dart';
 import '../models/product.dart';
 import '../providers/catalog_notifier.dart';
+import '../layout/responsive.dart';
 import '../theme/app_theme.dart';
 import '../theme/highlight_detail_theme.dart';
 import '../theme/highlight_icons.dart';
+import 'decode_aware_product_image.dart';
 import 'plantastic_loading.dart';
 
-/// Gentle lift on product photos (slightly brighter / clearer without clipping).
+/// Radii tuned for a calmer, store-grade shop tile (see home polish).
+const double _kShopCardRadius = 16;
+const double _kShopHeroRadius = 12;
+
+/// Space kept for title/price/footer below the **square** hero in grid cells.
+const double _kShopHeroFooterReserve = 100;
+
 Widget _brightenHero(Widget child) {
   const matrix = <double>[
     1.07,
@@ -91,8 +99,11 @@ class _ProductShopCardState extends State<ProductShopCard> {
     final compact = widget.compact;
 
     final cs = Theme.of(context).colorScheme;
-    final cardElevation = !_hover || compact ? (compact ? 3.5 : 7.0) : 16.0;
     final accent = cs.primary;
+    final lifted = _hover && !compact;
+    final baseShadowA = lifted ? 0.09 : 0.06;
+    final blur = lifted ? 16.0 : 12.0;
+    final dy = lifted ? 6.0 : 4.0;
 
     Widget heroArea() {
       return Stack(
@@ -204,7 +215,7 @@ class _ProductShopCardState extends State<ProductShopCard> {
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: Colors.orange.withValues(alpha: compact ? 0.93 : 0.9),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(10),
                   boxShadow: const [
                     BoxShadow(
                       blurRadius: 10,
@@ -278,7 +289,7 @@ class _ProductShopCardState extends State<ProductShopCard> {
 
     final subtitle = priceMuted
         ? 'Details only · checkout disabled'
-        : 'Tap for details';
+        : 'View details →';
 
     final highlights = context.watch<CatalogNotifier>().highlightsForProduct(
       widget.product,
@@ -294,22 +305,27 @@ class _ProductShopCardState extends State<ProductShopCard> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 240),
         curve: Curves.easeOutCubic,
-        child: Material(
-          elevation: cardElevation,
-          shadowColor: Color.lerp(
-            Colors.black,
-            AppTheme.mintGlow,
-            0.22,
-          )!.withValues(alpha: (_hover && !compact) ? 0.38 : 0.26),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(_kShopCardRadius),
           color: cs.surface,
-          borderRadius: BorderRadius.circular(18),
-          animationDuration: const Duration(milliseconds: 260),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: baseShadowA),
+              blurRadius: blur,
+              offset: Offset(0, dy),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(_kShopCardRadius),
+          child: Material(
+            color: Colors.transparent,
+            elevation: 0,
+            shadowColor: Colors.transparent,
             child: InkWell(
               splashColor: accent.withValues(alpha: 0.14),
               highlightColor: accent.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(_kShopCardRadius),
               onTap: widget.onTap,
               mouseCursor: widget.onTap != null
                   ? SystemMouseCursors.click
@@ -321,7 +337,9 @@ class _ProductShopCardState extends State<ProductShopCard> {
                     return const SizedBox.shrink();
                   }
                   final mh = constraints.maxHeight;
-                  final boundedCompact = compact && mh.isFinite && mh > 0;
+                  /// Grid / fixed-height parents give a finite max height; lay out with
+                  /// flex + scroll so the footer never overflows (see home SliverGrid).
+                  final boundedHeight = mh.isFinite && mh > 0;
 
                   final footer = DecoratedBox(
                     decoration: const BoxDecoration(
@@ -340,10 +358,10 @@ class _ProductShopCardState extends State<ProductShopCard> {
                     ),
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(
-                        compact ? 10 : 13,
-                        compact ? 7 : 8,
-                        compact ? 10 : 13,
-                        compact ? 9 : 10,
+                        compact ? 10 : 16,
+                        compact ? 8 : 14,
+                        compact ? 10 : 16,
+                        compact ? 10 : 14,
                       ),
                       child: _CardBody(
                         accent: accent,
@@ -359,7 +377,10 @@ class _ProductShopCardState extends State<ProductShopCard> {
                     ),
                   );
 
-                  if (boundedCompact) {
+                  if (boundedHeight) {
+                    final maxSquareByHeight =
+                        math.max(64.0, mh - _kShopHeroFooterReserve);
+                    final heroSide = math.min(w, maxSquareByHeight);
                     return SizedBox(
                       width: w,
                       height: mh,
@@ -367,21 +388,26 @@ class _ProductShopCardState extends State<ProductShopCard> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         mainAxisSize: MainAxisSize.max,
                         children: [
-                          Expanded(
-                            flex: 55,
-                            child: ClipRRect(
-                              borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(18),
-                              ),
-                              clipBehavior: Clip.antiAlias,
-                              child: ColoredBox(
-                                color: heroBg,
-                                child: SizedBox.expand(child: heroBlock()),
+                          ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(_kShopHeroRadius),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: ColoredBox(
+                              color: heroBg,
+                              child: SizedBox(
+                                height: heroSide,
+                                width: w,
+                                child: Center(
+                                  child: SizedBox.square(
+                                    dimension: heroSide,
+                                    child: heroBlock(),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                           Expanded(
-                            flex: 45,
                             child: ClipRect(
                               child: SingleChildScrollView(
                                 physics: const ClampingScrollPhysics(),
@@ -394,23 +420,19 @@ class _ProductShopCardState extends State<ProductShopCard> {
                     );
                   }
 
-                  final hHero = compact && mh.isFinite && mh > 0 && mh < w
-                      ? math.min(w, mh)
-                      : w;
                   return Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       ClipRRect(
                         borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(18),
+                          top: Radius.circular(_kShopHeroRadius),
                         ),
                         clipBehavior: Clip.antiAlias,
                         child: ColoredBox(
                           color: heroBg,
-                          child: SizedBox(
-                            width: w,
-                            height: hHero,
+                          child: AspectRatio(
+                            aspectRatio: 1,
                             child: heroBlock(),
                           ),
                         ),
@@ -458,68 +480,57 @@ class _CardBody extends StatelessWidget {
     final titleGreen = muted
         ? AppTheme.forest.withValues(alpha: 0.42)
         : AppTheme.forest;
-    final subtitleGreen = muted
-        ? AppTheme.textMuted
-        : Color.lerp(AppTheme.forestBright, AppTheme.leafDim, 0.35)!;
 
-    final titleShadows = muted
-        ? <Shadow>[]
-        : [
-            Shadow(
-              color: AppTheme.mintGlow.withValues(alpha: 0.35),
-              offset: const Offset(0, 1),
-              blurRadius: 8,
-            ),
-          ];
+    final lineHighlights = highlights.take(3).toList(growable: false);
 
-    final subtitleShowKits = !muted && product.kits.length > 1;
-    final lineHighlights = highlights
-        .take(compact ? 5 : 7)
-        .toList(growable: false);
+    final kitsLabel =
+        product.kits.length == 1 ? '1 kit' : '${product.kits.length} kits';
+
+    final dimGrey = cs.onSurfaceVariant;
+
+    final showDesktopHint =
+        Responsive.isDesktop(context) && hover && !muted && !compact;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (subtitleShowKits)
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              _CategoryPill(category: product.category, compact: compact),
-              Expanded(
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    '${product.kits.length} kits',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTheme.sans(
-                      fontSize: compact ? 10.35 : 11.85,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.42,
-                      height: 1.2,
-                      color: subtitleGreen,
-                    ),
-                  ),
+        _CategoryPill(category: product.category, compact: compact),
+        SizedBox(height: compact ? 6 : 8),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppTheme.serifDisplay(
+                  fontSize: compact ? 15.5 : 17,
+                  fontWeight: FontWeight.w600,
+                  height: compact ? 1.22 : 1.14,
+                  letterSpacing: -0.42,
+                  color: titleGreen,
                 ),
               ),
-            ],
-          )
-        else
-          _CategoryPill(category: product.category, compact: compact),
-        SizedBox(height: compact ? 5 : 7),
-        Text(
-          title,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: AppTheme.serifDisplay(
-            fontSize: compact ? 14.85 : 18.75,
-            fontWeight: FontWeight.w600,
-            height: compact ? 1.2 : 1.12,
-            letterSpacing: -0.52,
-            color: titleGreen,
-            shadows: titleShadows,
-          ),
+            ),
+            SizedBox(width: compact ? 6 : 8),
+            Padding(
+              padding: EdgeInsets.only(top: compact ? 1 : 2),
+              child: Text(
+                kitsLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTheme.sans(
+                  fontSize: compact ? 10 : 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
+                  height: 1.2,
+                  color: dimGrey.withValues(alpha: 0.82),
+                ),
+              ),
+            ),
+          ],
         ),
         SizedBox(height: compact ? 6 : 8),
         Row(
@@ -546,24 +557,24 @@ class _CardBody extends StatelessWidget {
                           TextSpan(
                             text: 'From ',
                             style: AppTheme.sans(
-                              fontSize: compact ? 10.5 : 12.95,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.35,
+                              fontSize: compact ? 10.25 : 11.5,
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: 0.28,
                               height: 1.06,
-                              color: AppTheme.forest.withValues(alpha: 0.58),
+                              color: dimGrey.withValues(alpha: 0.55),
                             ),
                           ),
                           TextSpan(
                             text: '₹$lowPrice',
                             style: AppTheme.sans(
-                              fontSize: compact ? 12.05 : 15.35,
+                              fontSize: compact ? 12.25 : 15,
                               fontWeight: FontWeight.w800,
                               letterSpacing: -0.35,
                               height: 1.06,
                               fontFeatures: const [
                                 FontFeature.tabularFigures(),
                               ],
-                              color: AppTheme.forestBright,
+                              color: accent,
                             ),
                           ),
                         ],
@@ -584,77 +595,60 @@ class _CardBody extends StatelessWidget {
           ],
         ),
         if (lineHighlights.isNotEmpty) ...[
-          SizedBox(height: compact ? 5 : 7),
+          SizedBox(height: compact ? 6 : 8),
           Wrap(
-            spacing: compact ? 3 : 5,
-            runSpacing: compact ? 3 : 5,
+            spacing: compact ? 5 : 6,
+            runSpacing: compact ? 5 : 6,
             children: [
               for (final h in lineHighlights)
-                _SubtitleHighlightIcon(tag: h, compact: compact),
+                _SubtitleHighlightIcon(
+                  tag: h,
+                  compact: compact,
+                ),
             ],
           ),
         ],
-        SizedBox(height: compact ? 5 : 7),
+        SizedBox(height: compact ? 8 : 10),
         Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Expanded(
               child: Text(
                 subtitle,
-                maxLines: 2,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppTheme.sans(
-                  fontSize: compact ? 10.35 : 11.85,
+                  fontSize: compact ? 11 : 12,
                   fontWeight: FontWeight.w500,
-                  letterSpacing: 0.72,
-                  height: 1.38,
-                  color: subtitleGreen,
+                  letterSpacing: 0.35,
+                  height: 1.35,
+                  color: dimGrey.withValues(alpha: 0.62),
                 ),
               ),
             ),
-            if (!compact && !muted)
-              AnimatedSlide(
-                duration: const Duration(milliseconds: 240),
-                curve: Curves.easeOutCubic,
-                offset: hover ? Offset.zero : const Offset(0.12, 0),
-                child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOutCubic,
-                  opacity: hover ? 1 : 0.45,
+            if (showDesktopHint)
+              Padding(
+                padding: const EdgeInsets.only(left: 10),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: accent.withValues(alpha: 0.32),
+                    ),
+                  ),
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 4, top: 1),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            AppTheme.mintGlow.withValues(alpha: 0.22),
-                            AppTheme.forest.withValues(alpha: 0.09),
-                          ],
-                        ),
-                        border: Border.all(
-                          color: AppTheme.forest.withValues(alpha: 0.28),
-                          width: 1.1,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(
-                              alpha: hover ? 0.42 : 0.28,
-                            ),
-                            blurRadius: hover ? 10 : 6,
-                            offset: Offset(0, hover ? 2 : 1),
-                          ),
-                        ],
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(5),
-                        child: Icon(
-                          Icons.arrow_forward_rounded,
-                          size: 15,
-                          color: AppTheme.forestBright,
-                        ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    child: Text(
+                      'View details',
+                      style: AppTheme.sans(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.2,
+                        color: accent,
                       ),
                     ),
                   ),
@@ -669,7 +663,10 @@ class _CardBody extends StatelessWidget {
 
 /// Small highlight badge on shop card “N kits” subtitle — per [iconKey] colors.
 class _SubtitleHighlightIcon extends StatelessWidget {
-  const _SubtitleHighlightIcon({required this.tag, required this.compact});
+  const _SubtitleHighlightIcon({
+    required this.tag,
+    required this.compact,
+  });
 
   final HighlightTag tag;
   final bool compact;
@@ -766,7 +763,7 @@ class _CategoryPill extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(12),
         gradient: gradient,
         border: Border.all(
           color: Colors.white.withValues(alpha: 0.58),
@@ -855,24 +852,39 @@ class _HeroImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final ap = assetPath?.trim();
     if (ap != null && ap.isNotEmpty) {
-      return _brightenHero(
-        Image.asset(
-          ap,
-          fit: BoxFit.contain,
-          alignment: Alignment.center,
-          errorBuilder: (context, error, stackTrace) {
-            final nw = networkUrl?.trim();
-            if (nw != null &&
-                nw.isNotEmpty &&
-                CatalogAssets.looksLikeUsableShopRemoteUrl(nw)) {
-              return _NetworkHero(
-                url: nw,
-                fallback: _fallback(context),
-                surface: tintSurface,
-              );
-            }
-            return _fallback(context);
-          },
+      return DecoratedBox(
+        decoration: BoxDecoration(color: Colors.grey.shade100),
+        child: _brightenHero(
+          DecodeAwareProductImage(
+            image: AssetImage(ap),
+            alignment: Alignment.center,
+            width: double.infinity,
+            height: double.infinity,
+            errorBuilder: (context, error, stackTrace) {
+              final nw = networkUrl?.trim();
+              if (nw != null &&
+                  nw.isNotEmpty &&
+                  CatalogAssets.looksLikeUsableShopRemoteUrl(nw)) {
+                return DecodeAwareProductImage(
+                  image: NetworkImage(nw),
+                  alignment: Alignment.center,
+                  width: double.infinity,
+                  height: double.infinity,
+                  loadingBuilder: (context, child, progress) {
+                    if (progress == null) return child;
+                    return ColoredBox(
+                      color: Colors.grey.shade100,
+                      child: Center(
+                        child: PlantasticLoading.thumbnail,
+                      ),
+                    );
+                  },
+                  errorBuilder: (c, e, s) => _fallback(context),
+                );
+              }
+              return _fallback(context);
+            },
+          ),
         ),
       );
     }
@@ -880,44 +892,29 @@ class _HeroImage extends StatelessWidget {
     if (nu != null &&
         nu.isNotEmpty &&
         CatalogAssets.looksLikeUsableShopRemoteUrl(nu)) {
-      return _brightenHero(
-        _NetworkHero(
-          url: nu,
-          fallback: _fallback(context),
-          surface: tintSurface,
+      return DecoratedBox(
+        decoration: BoxDecoration(color: Colors.grey.shade100),
+        child: _brightenHero(
+          DecodeAwareProductImage(
+            image: NetworkImage(nu),
+            alignment: Alignment.center,
+            width: double.infinity,
+            height: double.infinity,
+            loadingBuilder: (context, child, progress) {
+              if (progress == null) return child;
+              return ColoredBox(
+                color: Colors.grey.shade100,
+                child: Center(
+                  child: PlantasticLoading.thumbnail,
+                ),
+              );
+            },
+            errorBuilder: (context, error, stackTrace) =>
+                _fallback(context),
+          ),
         ),
       );
     }
     return _fallback(context);
-  }
-}
-
-class _NetworkHero extends StatelessWidget {
-  const _NetworkHero({
-    required this.url,
-    required this.fallback,
-    required this.surface,
-  });
-
-  final String url;
-  final Widget fallback;
-  final Color surface;
-
-  @override
-  Widget build(BuildContext context) {
-    return Image.network(
-      url,
-      fit: BoxFit.contain,
-      alignment: Alignment.center,
-      loadingBuilder: (context, child, progress) {
-        if (progress == null) return child;
-        return Container(
-          color: surface,
-          alignment: Alignment.center,
-          child: PlantasticLoading.thumbnail,
-        );
-      },
-      errorBuilder: (context, error, stackTrace) => fallback,
-    );
   }
 }

@@ -178,6 +178,7 @@ class AdminProductEditorScreen extends StatefulWidget {
 class _AdminProductEditorScreenState extends State<AdminProductEditorScreen> {
   final _formKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
+  final _galleryColumnScrollController = ScrollController();
   final _titleFieldKey = GlobalKey();
   final GlobalKey _productImagesSectionKey = GlobalKey();
   late TextEditingController _title;
@@ -444,8 +445,8 @@ class _AdminProductEditorScreenState extends State<AdminProductEditorScreen> {
       _showEditorSnack(
         context,
         n == 1
-            ? '1 image added · Scrolled you to Photos. Tap Save below to upload when ready.'
-            : '$n images added · Scrolled to Photos. Tap Save below to upload them when ready.',
+            ? 'Photo added — check Photos below, then Save to upload.'
+            : '$n photos added — Save uploads them.',
         duration: const Duration(seconds: 5),
       );
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -599,6 +600,7 @@ class _AdminProductEditorScreenState extends State<AdminProductEditorScreen> {
       s.dispose();
     }
     _scrollController.dispose();
+    _galleryColumnScrollController.dispose();
     _clearDraftControllers();
     _title.dispose();
     _subtitle.dispose();
@@ -625,7 +627,10 @@ class _AdminProductEditorScreenState extends State<AdminProductEditorScreen> {
   Future<void> _pickKits(BuildContext ctx, CatalogNotifier cat) async {
     final presets = cat.kitPresets;
     if (presets.isEmpty) {
-      _showEditorSnack(ctx, 'Add kit presets first (Admin tab “Kit presets”).');
+      _showEditorSnack(
+        ctx,
+        'No kit presets yet. Create them under Admin → Kit presets.',
+      );
       return;
     }
 
@@ -653,16 +658,19 @@ class _AdminProductEditorScreenState extends State<AdminProductEditorScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'All available kits',
+                    'Link kits to this product',
                     style: Theme.of(sheetCtx).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.2,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Text(
-                    'Select kits to sell on this product. Each gets its own ₹ price.',
+                    'Checked kits appear below with their contents. Give each '
+                    'one a ₹ price after you Apply.',
                     style: Theme.of(sheetCtx).textTheme.bodySmall?.copyWith(
                       color: Theme.of(sheetCtx).colorScheme.onSurfaceVariant,
+                      height: 1.4,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -684,7 +692,9 @@ class _AdminProductEditorScreenState extends State<AdminProductEditorScreen> {
                                 }
                               }),
                               title: Text(p.name),
-                              subtitle: Text('${p.catalogIds.length} items'),
+                              subtitle: Text(
+                                '${p.catalogIds.length} catalogue lines',
+                              ),
                               secondary: Icon(
                                 Icons.inventory_2_outlined,
                                 color: AppTheme.mintGlow.withValues(alpha: 0.9),
@@ -752,10 +762,430 @@ class _AdminProductEditorScreenState extends State<AdminProductEditorScreen> {
     });
   }
 
+  Widget _editorBasicsSection(BuildContext tc) {
+    return _section(
+      tc,
+      title: 'Basics',
+      caption: 'Name and blurb — they power shop cards and product detail.',
+      icon: Icons.article_outlined,
+      kids: [
+        KeyedSubtree(
+          key: _titleFieldKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              WorldFlowerTileField(
+                controller: _title,
+                focusNode: _titleFlowerFocus,
+                theme: Theme.of(tc),
+                formStyle: true,
+                dense: false,
+                labelText: 'Product name',
+                hintText: 'Search catalogue or enter any title',
+                suggestionsMaxWidth: 360,
+                onCatalogFlowerChosen: (w) {
+                  setState(() => _subtitle.text = w.snippet);
+                },
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 8, left: 2, right: 2),
+                child: Text(
+                  'Typing shows catalogue matches; picking one fills '
+                  'the short description under it. Fully custom titles '
+                  'work too.',
+                  style: Theme.of(tc).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(tc).colorScheme.onSurfaceVariant,
+                    height: 1.42,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: _subtitle,
+          decoration: InputDecoration(
+            labelText: 'Short description',
+            hintText: 'One or two sentences for shoppers',
+            helperText:
+                '${_subtitle.text.trim().length} / 8 characters minimum',
+            helperStyle: Theme.of(tc).textTheme.bodySmall?.copyWith(
+              color: _subtitle.text.trim().length >= 8
+                  ? AppTheme.forestBright
+                  : Theme.of(tc).colorScheme.outline,
+            ),
+          ),
+          maxLines: 5,
+          minLines: 3,
+          onChanged: (_) => setState(() {}),
+          validator: (s) => s != null && s.trim().length >= 8
+              ? null
+              : 'Use at least 8 characters.',
+        ),
+      ],
+    );
+  }
+
+  Widget _editorCategorySection(BuildContext tc) {
+    return _section(
+      tc,
+      title: 'Category & availability',
+      caption: 'Shelving, fulfilment, and shop visibility.',
+      icon: Icons.sell_outlined,
+      kids: [
+        InputDecorator(
+          decoration: InputDecoration(
+            labelText: 'Category',
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 12,
+            ),
+          ).applyDefaults(Theme.of(tc).inputDecorationTheme),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              isExpanded: true,
+              value: _category,
+              borderRadius: BorderRadius.circular(12),
+              icon: const Icon(Icons.expand_more_rounded),
+              style: Theme.of(tc).textTheme.bodyLarge?.copyWith(
+                color: Theme.of(tc).colorScheme.onSurface,
+                fontWeight: FontWeight.w600,
+              ),
+              dropdownColor: Theme.of(tc).colorScheme.surface,
+              items: const [
+                DropdownMenuItem(
+                  value: kCategoryFlowerSeed,
+                  child: Text(kCategoryFlowerSeed),
+                ),
+                DropdownMenuItem(
+                  value: kCategoryPlantSeed,
+                  child: Text(kCategoryPlantSeed),
+                ),
+              ],
+              onChanged: (x) {
+                if (x != null) setState(() => _category = x);
+              },
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: 8, left: 2, right: 2),
+          child: Text(
+            'Shoppers use categories to browse; pick the best fit '
+            'for this product.',
+            style: Theme.of(tc).textTheme.bodySmall?.copyWith(
+              color: Theme.of(tc).colorScheme.onSurfaceVariant,
+              height: 1.42,
+            ),
+          ),
+        ),
+        _adminSwitchTile(
+          Theme.of(tc),
+          title: 'In stock',
+          subtitle: 'Turn off to pause new orders while you restock.',
+          value: _inStock,
+          onChanged: (b) => setState(() => _inStock = b),
+        ),
+        _adminSwitchTile(
+          Theme.of(tc),
+          title: 'Visible in shop',
+          subtitle: _visibleInShop
+              ? 'Listed on the shopper home and browse.'
+              : 'Hidden from shoppers — still editable here.',
+          value: _visibleInShop,
+          onChanged: (b) => setState(() => _visibleInShop = b),
+        ),
+      ],
+    );
+  }
+
+  Widget _editorHighlightsSection(BuildContext tc, CatalogNotifier catalog) {
+    return _section(
+      tc,
+      title: 'Highlights',
+      caption: 'Badges on product detail (e.g. pollinator-friendly).',
+      icon: Icons.auto_awesome_outlined,
+      kids: [
+        if (catalog.highlightCatalog.isEmpty)
+          Text(
+            'No highlight tags yet. Add them from Admin → '
+            'Highlights, then return here.',
+            style: Theme.of(tc).textTheme.bodySmall?.copyWith(
+              color: Theme.of(tc).colorScheme.onSurfaceVariant,
+              height: 1.42,
+            ),
+          )
+        else ...[
+          Text(
+            'Tap to toggle. Only selected tags show on the product.',
+            style: Theme.of(tc).textTheme.bodySmall?.copyWith(
+              color: Theme.of(tc).colorScheme.onSurfaceVariant,
+              height: 1.42,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final h in catalog.highlightCatalog)
+                FilterChip(
+                  selected: _highlightIds.contains(h.id),
+                  showCheckmark: true,
+                  avatar: Icon(highlightIcon(h.iconKey), size: 18),
+                  label: Text(h.pillText),
+                  selectedColor: AppTheme.mintGlow.withValues(alpha: 0.22),
+                  checkmarkColor: AppTheme.mintGlow,
+                  side: BorderSide(
+                    color: AppTheme.surfaceBorder.withValues(alpha: 0.85),
+                  ),
+                  onSelected: (_) {
+                    setState(() {
+                      if (_highlightIds.contains(h.id)) {
+                        _highlightIds.remove(h.id);
+                      } else {
+                        _highlightIds.add(h.id);
+                      }
+                    });
+                  },
+                ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _editorPhotosSection(BuildContext tc) {
+    return _section(
+      tc,
+      key: _productImagesSectionKey,
+      title: 'Photos',
+      caption:
+          'The starred image is the shop grid cover. Uploads finalize when you save.',
+      icon: Icons.photo_library_outlined,
+      kids: [
+        FilledButton.icon(
+          icon: const Icon(Icons.collections_outlined),
+          label: const Text('Add from gallery'),
+          onPressed: () => _pickGallery(),
+        ),
+        if (_gallery.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: ClampingScrollPhysics(),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (var i = 0; i < _gallery.length; i++) ...[
+                  if (i != 0) const SizedBox(width: 12),
+                  _galleryImageTileWithFlowerType(tc, _gallery[i]),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _editorShopPreviewSection(BuildContext tc, CatalogNotifier catalog) {
+    return _section(
+      tc,
+      title: 'Shop preview',
+      caption: 'Preview updates as you edit. Tap the card for full detail.',
+      icon: Icons.storefront_outlined,
+      kids: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: AppTheme.surfaceBorder.withValues(alpha: 0.5),
+            ),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withValues(alpha: 0.98),
+                const Color(0xFFF4FAF6),
+              ],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.forest.withValues(alpha: 0.06),
+                blurRadius: 24,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: AppTheme.forestBright.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.sync_rounded,
+                              size: 15,
+                              color: AppTheme.forestBright,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Live preview',
+                              style: Theme.of(tc).textTheme.labelMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.35,
+                                    color: AppTheme.forestBright,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Approximate shop card — typography and spacing may '
+                  'vary slightly on phones.',
+                  style: Theme.of(tc).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(tc).colorScheme.onSurfaceVariant,
+                    height: 1.42,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Center(
+                  child: Material(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(18),
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      onTap: () => _openFullDetailPreview(tc, catalog),
+                      borderRadius: BorderRadius.circular(18),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.26),
+                              blurRadius: 18,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(18),
+                          child: SizedBox(
+                            height: 288,
+                            width: 210,
+                            child: ProductShopCard(
+                              previewWatermark: true,
+                              compact: true,
+                              heroImageOverride: _previewShopHeroOverride(),
+                              product: _assemblePreviewCatalogRow(
+                                _previewKitLinesWithImages(catalog),
+                                catalog,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _editorKitsSection(BuildContext tc, CatalogNotifier catalog) {
+    return _section(
+      tc,
+      title: 'Kits & pricing',
+      caption: 'Each kit is sellable separately — tune contents and ₹ price.',
+      icon: Icons.layers_outlined,
+      kids: [
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            FilledButton.icon(
+              onPressed: () => _pickKits(tc, catalog),
+              icon: const Icon(Icons.touch_app_outlined),
+              label: const Text('Choose kits'),
+            ),
+            OutlinedButton.icon(
+              onPressed: () => setState(() => _fillStarterDeluxe(catalog)),
+              icon: const Icon(Icons.restart_alt_rounded, size: 20),
+              label: const Text('Starter & Deluxe'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _itemFilter,
+          decoration: InputDecoration(
+            hintText: 'Find lines inside kits…',
+            prefixIcon: const Icon(Icons.search, size: 22),
+            isDense: true,
+          ).applyDefaults(Theme.of(tc).inputDecorationTheme),
+          onChanged: (_) => setState(() {}),
+        ),
+        const SizedBox(height: 10),
+        if (_drafts.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 28),
+            child: Text(
+              'No kits yet.\n'
+              'Use “Choose kits” or “Starter & Deluxe”.',
+              textAlign: TextAlign.center,
+              style: Theme.of(tc).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(tc).colorScheme.onSurfaceVariant,
+                height: 1.45,
+              ),
+            ),
+          )
+        else
+          ReorderableListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            buildDefaultDragHandles: false,
+            itemCount: _drafts.length,
+            onReorder: _reorderDrafts,
+            itemBuilder: (c, i) => _draftRow(tc, i, _drafts[i], catalog),
+          ),
+      ],
+    );
+  }
+
   Widget _section(
     BuildContext t, {
     Key? key,
     required String title,
+    String? caption,
     required IconData icon,
     required List<Widget> kids,
   }) {
@@ -763,45 +1193,64 @@ class _AdminProductEditorScreenState extends State<AdminProductEditorScreen> {
     final scheme = theme.colorScheme;
     return Card(
       key: key,
-      margin: const EdgeInsets.only(bottom: 18),
-      color: Colors.white.withValues(alpha: 0.97),
-      elevation: 1,
-      shadowColor: Colors.black.withValues(alpha: 0.1),
+      margin: const EdgeInsets.only(bottom: 16),
+      color: Colors.white.withValues(alpha: 0.98),
+      elevation: 0,
+      shadowColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: BorderSide(color: scheme.outline.withValues(alpha: 0.48)),
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: scheme.outline.withValues(alpha: 0.42)),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+        padding: const EdgeInsets.fromLTRB(18, 15, 18, 17),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 DecoratedBox(
                   decoration: BoxDecoration(
-                    color: AppTheme.mintGlow.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(10),
+                    color: AppTheme.mintGlow.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(11),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(9),
                     child: Icon(
                       icon,
                       size: 22,
-                      color: AppTheme.forestBright.withValues(alpha: 0.92),
+                      color: AppTheme.forestBright.withValues(alpha: 0.94),
                     ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    title,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.15,
-                      color: scheme.onSurface,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.2,
+                          height: 1.2,
+                          color: scheme.onSurface,
+                        ),
+                      ),
+                      if (caption != null) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          caption,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                            height: 1.4,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               ],
@@ -810,11 +1259,67 @@ class _AdminProductEditorScreenState extends State<AdminProductEditorScreen> {
             Divider(
               height: 1,
               thickness: 1,
-              color: scheme.outline.withValues(alpha: 0.32),
+              color: scheme.outline.withValues(alpha: 0.26),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 15),
             ...kids,
           ],
+        ),
+      ),
+    );
+  }
+
+  /// Avoids SwitchListTile / ListTile subtitle height quirks (small RenderFlex overflows).
+  Widget _adminSwitchTile(
+    ThemeData theme, {
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    final scheme = theme.colorScheme;
+    final subtitleStyle = theme.textTheme.bodySmall?.copyWith(
+      color: scheme.onSurfaceVariant,
+      height: 1.25,
+    );
+    final titleStyle = theme.textTheme.titleSmall?.copyWith(
+      fontWeight: FontWeight.w700,
+      letterSpacing: -0.05,
+      color: scheme.onSurface,
+    );
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: InkWell(
+        onTap: () => onChanged(!value),
+        borderRadius: BorderRadius.circular(10),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(title, style: titleStyle),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: subtitleStyle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              Switch(
+                value: value,
+                onChanged: onChanged,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1038,7 +1543,7 @@ class _AdminProductEditorScreenState extends State<AdminProductEditorScreen> {
               iconColor: isCover
                   ? Colors.amber
                   : Colors.white.withValues(alpha: 0.9),
-              tooltip: 'Grid cover',
+              tooltip: 'Shop grid cover',
               onTap: () => _toggleCover(s.slotId),
             ),
           ),
@@ -1227,13 +1732,14 @@ class _AdminProductEditorScreenState extends State<AdminProductEditorScreen> {
             child: _galleryHorizontalThumb(cx, s),
           ),
           if (isCover) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Text(
-              '★ Cover — catalogue flower fills subtitle',
+              'Cover · shopper grid',
               style: theme.textTheme.labelSmall?.copyWith(
-                color: AppTheme.mintGlow.withValues(alpha: 0.88),
-                fontWeight: FontWeight.w600,
-                height: 1.25,
+                color: AppTheme.forestBright.withValues(alpha: 0.92),
+                fontWeight: FontWeight.w700,
+                height: 1.2,
+                letterSpacing: 0.15,
               ),
             ),
           ],
@@ -1255,32 +1761,28 @@ class _AdminProductEditorScreenState extends State<AdminProductEditorScreen> {
       children: [
         const Divider(height: 22),
         Text(
-          'Images for this kit',
+          'Carousel for this kit',
           style: Theme.of(t).textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.1,
             color: Theme.of(t).colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 6),
         Text(
-          'Detail page carousel uses your picks below. Order matches Product '
-          'images (left → right).',
+          'Order follows Photos (left → right). Shoppers swipe these on '
+          'product detail.',
           style: Theme.of(t).textTheme.bodySmall?.copyWith(
             color: Theme.of(t).colorScheme.onSurfaceVariant,
-            height: 1.35,
+            height: 1.42,
           ),
         ),
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          title: const Text('Same as product gallery'),
-          subtitle: Text(
-            'When off, tap thumbnails to include or exclude slides for this '
-            'kit only.',
-            style: Theme.of(t).textTheme.bodySmall?.copyWith(
-              color: Theme.of(t).colorScheme.onSurfaceVariant,
-              height: 1.3,
-            ),
-          ),
+        _adminSwitchTile(
+          Theme.of(t),
+          title: 'Same as product gallery',
+          subtitle: d.kitUsesWholeGallery
+              ? 'Uses every uploaded slide for this kit.'
+              : 'Choose which slides this kit shows — tap thumbnails.',
           value: d.kitUsesWholeGallery,
           onChanged: (v) {
             setState(() {
@@ -1300,8 +1802,7 @@ class _AdminProductEditorScreenState extends State<AdminProductEditorScreen> {
             Padding(
               padding: const EdgeInsets.only(top: 10, bottom: 4),
               child: Text(
-                'Add photos under Product images first, then choose which '
-                'slides this kit uses.',
+                'Add pictures in Photos above first — then choose slides here.',
                 style: Theme.of(t).textTheme.bodySmall?.copyWith(
                   color: Theme.of(t).colorScheme.onSurfaceVariant,
                   height: 1.35,
@@ -1513,13 +2014,13 @@ class _AdminProductEditorScreenState extends State<AdminProductEditorScreen> {
       return;
     }
     if (_title.text.trim().length < 2) {
-      _showEditorSnack(ctx, 'Title required (type 2+ characters)');
+      _showEditorSnack(ctx, 'Add a product name — at least 2 characters.');
       _scrollToTitle();
       return;
     }
 
     if (_drafts.isEmpty) {
-      _showEditorSnack(ctx, 'Pick at least one kit.');
+      _showEditorSnack(ctx, 'Add at least one kit with a price.');
       return;
     }
 
@@ -1530,16 +2031,16 @@ class _AdminProductEditorScreenState extends State<AdminProductEditorScreen> {
       final name = d.labelCtrl.text.trim();
       final inr = int.tryParse(d.priceCtrl.text.trim());
       if (name.length < 2) {
-        _showEditorSnack(ctx, 'Give each kit a short name');
+        _showEditorSnack(ctx, 'Each kit needs a name (2+ characters).');
         return;
       }
       if (inr == null || inr < 1) {
-        _showEditorSnack(ctx, 'Enter a ₹ price for “$name”');
+        _showEditorSnack(ctx, 'Enter a valid ₹ amount for “$name”.');
         return;
       }
       final ordered = cat.orderedSelectedIds(d.catalogIds, cat.kitCatalog);
       if (ordered.isEmpty) {
-        _showEditorSnack(ctx, 'Tick items for “$name”');
+        _showEditorSnack(ctx, 'Choose catalogue items inside “$name”.');
         return;
       }
       lines.add(
@@ -1560,6 +2061,7 @@ class _AdminProductEditorScreenState extends State<AdminProductEditorScreen> {
     setState(() => _saving = true);
     WidgetsBinding.instance.scheduleFrame();
     await SchedulerBinding.instance.endOfFrame;
+    await Future<void>.delayed(const Duration(milliseconds: 32));
     try {
       late final String pid;
       if (_isEdit) {
@@ -1644,9 +2146,9 @@ class _AdminProductEditorScreenState extends State<AdminProductEditorScreen> {
   Widget build(BuildContext context) {
     final catalog = context.watch<CatalogNotifier>();
     return Theme(
-      data: AdminShell.themeShopperChrome(),
+      data: AdminShell.themeDashboardChrome(),
       child: DecoratedBox(
-        decoration: AdminShell.shopperBackground,
+        decoration: AdminShell.dashboardBackdrop,
         child: Builder(
           builder: (tc) {
             final pad = MediaQuery.paddingOf(tc).bottom;
@@ -1664,8 +2166,8 @@ class _AdminProductEditorScreenState extends State<AdminProductEditorScreen> {
                       builder: (subCtx, val, _) {
                         final pv = val.text.trim();
                         final hint = _isEdit
-                            ? (pv.isEmpty ? 'Editing' : pv)
-                            : 'Draft';
+                            ? (pv.isEmpty ? 'Untitled · add a name below' : pv)
+                            : 'Draft · not live until you save';
                         final subScheme = Theme.of(subCtx).colorScheme;
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1673,7 +2175,7 @@ class _AdminProductEditorScreenState extends State<AdminProductEditorScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              _isEdit ? 'Edit product' : 'New product',
+                              _isEdit ? 'Edit product' : 'Create product',
                               style: Theme.of(subCtx).textTheme.titleMedium
                                   ?.copyWith(
                                     fontWeight: FontWeight.w800,
@@ -1699,607 +2201,176 @@ class _AdminProductEditorScreenState extends State<AdminProductEditorScreen> {
                       child: Column(
                         children: [
                           Expanded(
-                            child: ListView(
-                              controller: _scrollController,
-                              physics: plantasticViewportPhysics,
-                              padding: EdgeInsets.fromLTRB(
-                                layoutG,
-                                10,
-                                layoutG,
-                                8,
-                              ),
-                              children: [
-                                _section(
+                            child: LayoutBuilder(
+                              builder: (ctx, constraints) {
+                                final sectionPad = EdgeInsets.fromLTRB(
+                                  layoutG,
+                                  14,
+                                  layoutG,
+                                  96,
+                                );
+                                final basics = _editorBasicsSection(tc);
+                                final category = _editorCategorySection(tc);
+                                final highlights = _editorHighlightsSection(
                                   tc,
-                                  title: 'Basics',
-                                  icon: Icons.article_outlined,
-                                  kids: [
-                                    KeyedSubtree(
-                                      key: _titleFieldKey,
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.stretch,
-                                        children: [
-                                          WorldFlowerTileField(
-                                            controller: _title,
-                                            focusNode: _titleFlowerFocus,
-                                            theme: Theme.of(tc),
-                                            formStyle: true,
-                                            dense: false,
-                                            labelText: 'Title',
-                                            hintText:
-                                                'Type to search flowers or enter a custom title',
-                                            suggestionsMaxWidth: 360,
-                                            onCatalogFlowerChosen: (w) {
-                                              setState(
-                                                () =>
-                                                    _subtitle.text = w.snippet,
-                                              );
-                                            },
-                                          ),
-                                          Padding(
-                                            padding: const EdgeInsets.only(
-                                              top: 6,
-                                              left: 4,
-                                              right: 4,
-                                            ),
-                                            child: Text(
-                                              'Flower catalogue: typing shows matches; picking '
-                                              'one fills Description below. Any custom title works too.',
-                                              style: Theme.of(tc)
-                                                  .textTheme
-                                                  .bodySmall
-                                                  ?.copyWith(
-                                                    color: Theme.of(tc)
-                                                        .colorScheme
-                                                        .onSurfaceVariant,
-                                                    height: 1.35,
-                                                  ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 10),
-                                    TextFormField(
-                                      controller: _subtitle,
-                                      decoration: InputDecoration(
-                                        labelText: 'Description',
-                                        helperText:
-                                            '${_subtitle.text.trim().length}/8 min',
-                                        helperStyle: Theme.of(tc)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.copyWith(
-                                              color:
-                                                  _subtitle.text
-                                                          .trim()
-                                                          .length >=
-                                                      8
-                                                  ? AppTheme.forestBright
-                                                  : Theme.of(
-                                                      tc,
-                                                    ).colorScheme.outline,
-                                            ),
-                                      ),
-                                      maxLines: 5,
-                                      minLines: 3,
-                                      onChanged: (_) => setState(() {}),
-                                      validator: (s) =>
-                                          s != null && s.trim().length >= 8
-                                          ? null
-                                          : '8+ chars',
-                                    ),
-                                  ],
-                                ),
-                                _section(
+                                  catalog,
+                                );
+                                final photos = _editorPhotosSection(tc);
+                                final preview = _editorShopPreviewSection(
                                   tc,
-                                  title: 'Category & stock',
-                                  icon: Icons.sell_outlined,
-                                  kids: [
-                                    InputDecorator(
-                                      decoration:
-                                          InputDecoration(
-                                            labelText: 'Category',
-                                            contentPadding:
-                                                const EdgeInsets.symmetric(
-                                                  horizontal: 14,
-                                                  vertical: 12,
-                                                ),
-                                          ).applyDefaults(
-                                            Theme.of(tc).inputDecorationTheme,
-                                          ),
-                                      child: DropdownButtonHideUnderline(
-                                        child: DropdownButton<String>(
-                                          isExpanded: true,
-                                          value: _category,
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          icon: const Icon(
-                                            Icons.expand_more_rounded,
-                                          ),
-                                          style: Theme.of(tc)
-                                              .textTheme
-                                              .bodyLarge
-                                              ?.copyWith(
-                                                color: Theme.of(
-                                                  tc,
-                                                ).colorScheme.onSurface,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                          dropdownColor: Theme.of(
-                                            tc,
-                                          ).colorScheme.surface,
-                                          items: const [
-                                            DropdownMenuItem(
-                                              value: kCategoryFlowerSeed,
-                                              child: Text(kCategoryFlowerSeed),
-                                            ),
-                                            DropdownMenuItem(
-                                              value: kCategoryPlantSeed,
-                                              child: Text(kCategoryPlantSeed),
-                                            ),
-                                          ],
-                                          onChanged: (x) {
-                                            if (x != null) {
-                                              setState(() => _category = x);
-                                            }
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 10),
-                                    SwitchListTile(
-                                      contentPadding: EdgeInsets.zero,
-                                      dense: false,
-                                      title: const Text('In stock'),
-                                      subtitle: Text(
-                                        'Warehouse / fulfilment toggle',
-                                        style: Theme.of(tc).textTheme.bodySmall
-                                            ?.copyWith(
-                                              color: Theme.of(
-                                                tc,
-                                              ).colorScheme.onSurfaceVariant,
-                                              height: 1.35,
-                                            ),
-                                      ),
-                                      value: _inStock,
-                                      onChanged: (b) =>
-                                          setState(() => _inStock = b),
-                                    ),
-                                    SwitchListTile(
-                                      contentPadding: EdgeInsets.zero,
-                                      dense: false,
-                                      title: const Text('Visible in shop'),
-                                      subtitle: Text(
-                                        _visibleInShop
-                                            ? 'Shown on shopper home.'
-                                            : 'Hidden from shopper home — admin-only.',
-                                        style: Theme.of(tc).textTheme.bodySmall
-                                            ?.copyWith(
-                                              color: Theme.of(
-                                                tc,
-                                              ).colorScheme.onSurfaceVariant,
-                                              height: 1.35,
-                                            ),
-                                      ),
-                                      value: _visibleInShop,
-                                      onChanged: (b) =>
-                                          setState(() => _visibleInShop = b),
-                                    ),
-                                  ],
-                                ),
-                                _section(
+                                  catalog,
+                                );
+                                final kits = _editorKitsSection(tc, catalog);
+                                final narrow = <Widget>[
+                                  basics,
+                                  category,
+                                  highlights,
+                                  photos,
+                                  preview,
+                                  kits,
+                                ];
+                                if (constraints.maxWidth < 1100) {
+                                  return ListView(
+                                    controller: _scrollController,
+                                    physics: plantasticViewportPhysics,
+                                    padding: sectionPad,
+                                    children: narrow,
+                                  );
+                                }
+                                final dividerColor = Theme.of(
                                   tc,
-                                  title: 'Product highlights',
-                                  icon: Icons.auto_awesome_outlined,
-                                  kids: [
-                                    if (catalog.highlightCatalog.isEmpty)
-                                      Text(
-                                        'No highlights in catalogue.',
-                                        style: Theme.of(tc).textTheme.bodySmall
-                                            ?.copyWith(
-                                              color: Theme.of(
-                                                tc,
-                                              ).colorScheme.onSurfaceVariant,
-                                            ),
-                                      )
-                                    else
-                                      Wrap(
-                                        spacing: 8,
-                                        runSpacing: 8,
-                                        children: [
-                                          for (final h
-                                              in catalog.highlightCatalog)
-                                            FilterChip(
-                                              selected: _highlightIds.contains(
-                                                h.id,
-                                              ),
-                                              showCheckmark: true,
-                                              avatar: Icon(
-                                                highlightIcon(h.iconKey),
-                                                size: 18,
-                                              ),
-                                              label: Text(h.pillText),
-                                              selectedColor: AppTheme.mintGlow
-                                                  .withValues(alpha: 0.22),
-                                              checkmarkColor: AppTheme.mintGlow,
-                                              side: BorderSide(
-                                                color: AppTheme.surfaceBorder
-                                                    .withValues(alpha: 0.85),
-                                              ),
-                                              onSelected: (_) {
-                                                setState(() {
-                                                  if (_highlightIds.contains(
-                                                    h.id,
-                                                  )) {
-                                                    _highlightIds.remove(h.id);
-                                                  } else {
-                                                    _highlightIds.add(h.id);
-                                                  }
-                                                });
-                                              },
-                                            ),
-                                        ],
-                                      ),
-                                  ],
-                                ),
-                                _section(
-                                  tc,
-                                  key: _productImagesSectionKey,
-                                  title: 'Product images',
-                                  icon: Icons.photo_library_outlined,
-                                  kids: [
-                                    FilledButton.icon(
-                                      icon: const Icon(
-                                        Icons.collections_outlined,
-                                      ),
-                                      label: const Text('Pick from gallery'),
-                                      onPressed: () => _pickGallery(),
-                                    ),
-                                    if (_gallery.isNotEmpty) ...[
-                                      const SizedBox(height: 14),
-                                      SingleChildScrollView(
-                                        scrollDirection: Axis.horizontal,
-                                        physics:
-                                            const AlwaysScrollableScrollPhysics(
-                                              parent: ClampingScrollPhysics(),
-                                            ),
-                                        child: Row(
+                                ).colorScheme.outline.withValues(alpha: 0.22);
+                                return Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: SingleChildScrollView(
+                                        controller:
+                                            _galleryColumnScrollController,
+                                        physics: plantasticViewportPhysics,
+                                        padding: sectionPad,
+                                        child: Column(
                                           crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            for (
-                                              var i = 0;
-                                              i < _gallery.length;
-                                              i++
-                                            ) ...[
-                                              if (i != 0)
-                                                const SizedBox(width: 12),
-                                              _galleryImageTileWithFlowerType(
-                                                tc,
-                                                _gallery[i],
-                                              ),
-                                            ],
-                                          ],
+                                              CrossAxisAlignment.stretch,
+                                          children: [photos, preview],
                                         ),
                                       ),
-                                    ],
-                                  ],
-                                ),
-                                _section(
-                                  tc,
-                                  title: 'Shop preview',
-                                  icon: Icons.storefront_outlined,
-                                  kids: [
-                                    DecoratedBox(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(18),
-                                        border: Border.all(
-                                          color: AppTheme.surfaceBorder
-                                              .withValues(alpha: 0.5),
-                                        ),
-                                        gradient: LinearGradient(
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                          colors: [
-                                            Colors.white.withValues(
-                                              alpha: 0.98,
-                                            ),
-                                            const Color(0xFFF4FAF6),
-                                          ],
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: AppTheme.forest.withValues(
-                                              alpha: 0.06,
-                                            ),
-                                            blurRadius: 24,
-                                            offset: const Offset(0, 10),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Padding(
-                                        padding: const EdgeInsets.fromLTRB(
-                                          14,
-                                          12,
-                                          14,
-                                          18,
-                                        ),
+                                    ),
+                                    VerticalDivider(
+                                      width: 1,
+                                      thickness: 1,
+                                      color: dividerColor,
+                                    ),
+                                    Expanded(
+                                      child: SingleChildScrollView(
+                                        controller: _scrollController,
+                                        physics: plantasticViewportPhysics,
+                                        padding: sectionPad,
                                         child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.stretch,
                                           children: [
-                                            Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.center,
-                                              children: [
-                                                DecoratedBox(
-                                                  decoration: BoxDecoration(
-                                                    color: AppTheme.forestBright
-                                                        .withValues(
-                                                          alpha: 0.14,
-                                                        ),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          999,
-                                                        ),
-                                                  ),
-                                                  child: Padding(
-                                                    padding:
-                                                        const EdgeInsets.symmetric(
-                                                          horizontal: 10,
-                                                          vertical: 5,
-                                                        ),
-                                                    child: Row(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      children: [
-                                                        Icon(
-                                                          Icons.sync_rounded,
-                                                          size: 15,
-                                                          color: AppTheme
-                                                              .forestBright,
-                                                        ),
-                                                        const SizedBox(
-                                                          width: 6,
-                                                        ),
-                                                        Text(
-                                                          'Live preview',
-                                                          style: Theme.of(tc)
-                                                              .textTheme
-                                                              .labelMedium
-                                                              ?.copyWith(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w800,
-                                                                letterSpacing:
-                                                                    0.35,
-                                                                color: AppTheme
-                                                                    .forestBright,
-                                                              ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 14),
-                                            Center(
-                                              child: Material(
-                                                color: Colors.transparent,
-                                                borderRadius:
-                                                    BorderRadius.circular(18),
-                                                clipBehavior: Clip.antiAlias,
-                                                child: InkWell(
-                                                  onTap: () =>
-                                                      _openFullDetailPreview(
-                                                        tc,
-                                                        catalog,
-                                                      ),
-                                                  borderRadius:
-                                                      BorderRadius.circular(18),
-                                                  child: DecoratedBox(
-                                                    decoration: BoxDecoration(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            18,
-                                                          ),
-                                                      boxShadow: [
-                                                        BoxShadow(
-                                                          color: Colors.black
-                                                              .withValues(
-                                                                alpha: 0.26,
-                                                              ),
-                                                          blurRadius: 18,
-                                                          offset: const Offset(
-                                                            0,
-                                                            8,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    child: ClipRRect(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            18,
-                                                          ),
-                                                      child: SizedBox(
-                                                        height: 288,
-                                                        width: 210,
-                                                        child: ProductShopCard(
-                                                          previewWatermark:
-                                                              true,
-                                                          compact: true,
-                                                          heroImageOverride:
-                                                              _previewShopHeroOverride(),
-                                                          product:
-                                                              _assemblePreviewCatalogRow(
-                                                                _previewKitLinesWithImages(
-                                                                  catalog,
-                                                                ),
-                                                                catalog,
-                                                              ),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
+                                            basics,
+                                            category,
+                                            highlights,
+                                            kits,
                                           ],
                                         ),
                                       ),
                                     ),
                                   ],
-                                ),
-                                _section(
+                                );
+                              },
+                            ),
+                          ),
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Divider(
+                                height: 1,
+                                thickness: 1,
+                                color: Theme.of(
                                   tc,
-                                  title: 'Kits & pricing',
-                                  icon: Icons.layers_outlined,
-                                  kids: [
-                                    Wrap(
-                                      spacing: 10,
-                                      runSpacing: 8,
+                                ).colorScheme.outline.withValues(alpha: 0.12),
+                              ),
+                              Material(
+                                color: Colors.white.withValues(alpha: 0.99),
+                                elevation: 12,
+                                surfaceTintColor: Colors.transparent,
+                                shadowColor: Colors.black.withValues(
+                                  alpha: 0.1,
+                                ),
+                                child: SafeArea(
+                                  top: false,
+                                  child: Padding(
+                                    padding: EdgeInsets.fromLTRB(
+                                      layoutG,
+                                      10,
+                                      layoutG,
+                                      pad + 10,
+                                    ),
+                                    child: Row(
                                       children: [
-                                        FilledButton.icon(
-                                          onPressed: () =>
-                                              _pickKits(tc, catalog),
-                                          icon: const Icon(
-                                            Icons.touch_app_outlined,
+                                        Expanded(
+                                          child: OutlinedButton(
+                                            onPressed: _saving
+                                                ? null
+                                                : () => Navigator.maybePop(
+                                                    context,
+                                                  ),
+                                            child: const Text('Cancel'),
                                           ),
-                                          label: const Text('Select kits…'),
                                         ),
-                                        OutlinedButton(
-                                          onPressed: () => setState(
-                                            () => _fillStarterDeluxe(catalog),
-                                          ),
-                                          child: const Text(
-                                            'Reset Starter+Deluxe',
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          flex: 2,
+                                          child: FilledButton(
+                                            onPressed: _saving
+                                                ? null
+                                                : () => _submit(context),
+                                            child: _saving
+                                                ? SizedBox(
+                                                    height: 24,
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        SizedBox(
+                                                          height: 22,
+                                                          width: 22,
+                                                          child: Center(
+                                                            child:
+                                                                PlantasticLoading
+                                                                    .inline,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 10,
+                                                        ),
+                                                        Text(
+                                                          'Saving…',
+                                                          style: Theme.of(tc)
+                                                              .textTheme
+                                                              .labelLarge,
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  )
+                                                : Text(
+                                                    _isEdit ? 'Save' : 'Create',
+                                                  ),
                                           ),
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 12),
-                                    TextField(
-                                      controller: _itemFilter,
-                                      decoration: const InputDecoration(
-                                        hintText:
-                                            'Search items inside expandable kits…',
-                                        prefixIcon: Icon(
-                                          Icons.search,
-                                          size: 22,
-                                        ),
-                                        isDense: true,
-                                      ),
-                                      onChanged: (_) => setState(() {}),
-                                    ),
-                                    const SizedBox(height: 10),
-                                    if (_drafts.isEmpty)
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 28,
-                                        ),
-                                        child: Text(
-                                          'No kits.',
-                                          textAlign: TextAlign.center,
-                                          style: Theme.of(tc)
-                                              .textTheme
-                                              .bodyMedium
-                                              ?.copyWith(
-                                                color: Theme.of(
-                                                  tc,
-                                                ).colorScheme.onSurfaceVariant,
-                                              ),
-                                        ),
-                                      )
-                                    else
-                                      ReorderableListView.builder(
-                                        shrinkWrap: true,
-                                        physics:
-                                            const NeverScrollableScrollPhysics(),
-                                        buildDefaultDragHandles: false,
-                                        itemCount: _drafts.length,
-                                        onReorder: _reorderDrafts,
-                                        itemBuilder: (c, i) => _draftRow(
-                                          tc,
-                                          i,
-                                          _drafts[i],
-                                          catalog,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          Material(
-                            color: Colors.white.withValues(alpha: 0.99),
-                            elevation: 12,
-                            surfaceTintColor: Colors.transparent,
-                            shadowColor: Colors.black.withValues(alpha: 0.1),
-                            child: SafeArea(
-                              top: false,
-                              child: Padding(
-                                padding: EdgeInsets.fromLTRB(
-                                  layoutG,
-                                  10,
-                                  layoutG,
-                                  pad + 10,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: OutlinedButton(
-                                        onPressed: _saving
-                                            ? null
-                                            : () => Navigator.maybePop(context),
-                                        child: const Text('Cancel'),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      flex: 2,
-                                      child: FilledButton(
-                                        onPressed: _saving
-                                            ? null
-                                            : () => _submit(context),
-                                        child: _saving
-                                            ? SizedBox(
-                                                height: 24,
-                                                child: Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: [
-                                                    SizedBox(
-                                                      height: 22,
-                                                      width: 22,
-                                                      child: Center(
-                                                        child: PlantasticLoading
-                                                            .inline,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(width: 10),
-                                                    Text(
-                                                      'Saving…',
-                                                      style: Theme.of(
-                                                        tc,
-                                                      ).textTheme.labelLarge,
-                                                    ),
-                                                  ],
-                                                ),
-                                              )
-                                            : Text(_isEdit ? 'Save' : 'Create'),
-                                      ),
-                                    ),
-                                  ],
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
                         ],
                       ),
@@ -2313,7 +2384,7 @@ class _AdminProductEditorScreenState extends State<AdminProductEditorScreen> {
                         color: Colors.black.withValues(alpha: 0.34),
                         child: AdminBusyView(
                           message:
-                              'Saving…\nPlease wait — uploading & syncing catalogue',
+                              'Saving…\nUploading images and syncing the catalogue.',
                         ),
                       ),
                     ),

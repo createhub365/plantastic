@@ -5,9 +5,10 @@ import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 
 import '../catalog/catalog_assets.dart';
+import 'decode_aware_product_image.dart';
 import 'plantastic_loading.dart';
 
-/// Square image pager — [BoxFit.contain] taaki crop / hide na ho.
+/// Square carousel — 1080×1080 slides use [BoxFit.cover], others [BoxFit.contain].
 class ProductImageCarousel extends StatefulWidget {
   const ProductImageCarousel({
     super.key,
@@ -120,7 +121,12 @@ class _ProductImageCarouselState extends State<ProductImageCarousel> {
       body = Stack(
         fit: StackFit.expand,
         children: [
-          _CarouselSlideImage(urls.first, widget.previewMemoryAtIndex, 0),
+          _CarouselSlideImage(
+            urls.first,
+            widget.previewMemoryAtIndex,
+            0,
+            widget.side,
+          ),
           if (widget.titleOverlay != null &&
               widget.titleOverlay!.trim().isNotEmpty)
             _TitleOverlay(widget.titleOverlay!),
@@ -146,7 +152,12 @@ class _ProductImageCarouselState extends State<ProductImageCarousel> {
               itemBuilder: (c, i) => Stack(
                 fit: StackFit.expand,
                 children: [
-                  _CarouselSlideImage(urls[i], widget.previewMemoryAtIndex, i),
+                  _CarouselSlideImage(
+                    urls[i],
+                    widget.previewMemoryAtIndex,
+                    i,
+                    widget.side,
+                  ),
                   if (widget.titleOverlay != null &&
                       widget.titleOverlay!.trim().isNotEmpty)
                     _TitleOverlay(widget.titleOverlay!),
@@ -221,32 +232,40 @@ class _TitleOverlay extends StatelessWidget {
 }
 
 class _CarouselSlideImage extends StatelessWidget {
-  const _CarouselSlideImage(this.src, this.previewMemory, this.index);
+  const _CarouselSlideImage(
+    this.src,
+    this.previewMemory,
+    this.index,
+    this.side,
+  );
 
   final String src;
   final Map<int, Uint8List>? previewMemory;
   final int index;
+  final double side;
 
   @override
   Widget build(BuildContext context) {
     final mem = previewMemory?[index];
     if (mem != null && mem.isNotEmpty) {
-      return Image.memory(
-        mem,
-        fit: BoxFit.contain,
+      return DecodeAwareProductImage(
+        image: MemoryImage(mem),
+        width: side,
+        height: side,
         alignment: Alignment.center,
         errorBuilder: (context, error, stackTrace) =>
             const _GradientPlaceholder(),
       );
     }
-    return _CarouselImage(src);
+    return _CarouselImage(src, side);
   }
 }
 
 class _CarouselImage extends StatelessWidget {
-  const _CarouselImage(this.src);
+  const _CarouselImage(this.src, this.side);
 
   final String src;
+  final double side;
 
   @override
   Widget build(BuildContext context) {
@@ -255,9 +274,10 @@ class _CarouselImage extends StatelessWidget {
       return const _GradientPlaceholder();
     }
     if (CatalogAssets.looksLikeRemoteUrl(s)) {
-      return Image.network(
-        s,
-        fit: BoxFit.contain,
+      return DecodeAwareProductImage(
+        image: NetworkImage(s),
+        width: side,
+        height: side,
         alignment: Alignment.center,
         loadingBuilder: (context, child, progress) {
           if (progress == null) return child;
@@ -272,9 +292,10 @@ class _CarouselImage extends StatelessWidget {
             const _GradientPlaceholder(),
       );
     }
-    return Image.asset(
-      s,
-      fit: BoxFit.contain,
+    return DecodeAwareProductImage(
+      image: AssetImage(s),
+      width: side,
+      height: side,
       alignment: Alignment.center,
       errorBuilder: (context, error, stackTrace) =>
           const _GradientPlaceholder(),

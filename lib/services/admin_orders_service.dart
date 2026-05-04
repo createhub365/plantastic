@@ -17,4 +17,14 @@ class AdminOrdersService {
     }
     return list;
   }
+
+  /// Persists fulfilment status when `orders.status` (or DB policy) allows it.
+  static Future<void> updateOrderStatus({
+    required String id,
+    required String status,
+  }) async {
+    await Supabase.instance.client.from('orders').update({
+      'status': status,
+    }).eq('id', id);
+  }
 }

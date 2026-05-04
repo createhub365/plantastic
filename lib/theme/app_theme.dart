@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'app_colors.dart';
+import 'app_spacing.dart';
+
 /// Brand palette — forest shop: depth, moss highlights, soft gold accents.
 abstract final class AppTheme {
   static const Color forest = Color(0xFF143D1A);
@@ -26,16 +29,15 @@ abstract final class AppTheme {
   static const Color textSecondary = Color(0xFFB2C9B8);
   static const Color textMuted = Color(0xFF7A9588);
 
-  /// Page backdrop — white / barely-tinted (light UI).
+  /// Page backdrop — soft neutral ([AppColors.background]).
   static const LinearGradient scaffoldGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    stops: [0.0, 0.45, 0.85, 1.0],
+    stops: [0.0, 0.55, 1.0],
     colors: [
-      Color(0xFFFFFFFF),
-      Color(0xFFFAFBFA),
-      Color(0xFFF5FAF8),
-      Color(0xFFF0F7F4),
+      AppColors.background,
+      AppColors.background,
+      Color(0xFFF2F5F3),
     ],
   );
 
@@ -43,7 +45,7 @@ abstract final class AppTheme {
     Shadow(color: c.withValues(alpha: 0.35), blurRadius: blur),
   ];
 
-  /// Plus Jakarta where supported; Flutter web uses system/UI stack (no google_fonts fetch).
+  /// Plus Jakarta / Poppins where supported; Flutter web uses named stack.
   static TextStyle sans({
     required Color color,
     double? fontSize,
@@ -53,7 +55,7 @@ abstract final class AppTheme {
     List<FontFeature>? fontFeatures,
   }) {
     if (!kIsWeb) {
-      return GoogleFonts.plusJakartaSans(
+      return GoogleFonts.poppins(
         color: color,
         fontSize: fontSize,
         fontWeight: fontWeight,
@@ -63,6 +65,7 @@ abstract final class AppTheme {
       );
     }
     return TextStyle(
+      fontFamily: 'Poppins',
       color: color,
       fontSize: fontSize,
       fontWeight: fontWeight,
@@ -361,135 +364,162 @@ abstract final class AppTheme {
     );
   }
 
-  /// Light UI — white scaffold, dark type, green primaries.
+  /// Light UI — [AppColors] palette, Poppins, premium cards & CTAs.
   static ThemeData light() {
-    final scheme =
-        ColorScheme.fromSeed(
-          seedColor: forestBright,
-          brightness: Brightness.light,
-        ).copyWith(
-          primary: forestBright,
-          onPrimary: Colors.white,
-          primaryContainer: const Color(0xFFC8E6C9),
-          onPrimaryContainer: forest,
-          secondary: goldAccent,
-          onSecondary: const Color(0xFF1F1A12),
-          surface: Colors.white,
-          onSurface: const Color(0xFF122419),
-          surfaceContainerHighest: const Color(0xFFE7F3ED),
-          onSurfaceVariant: const Color(0xFF4A6257),
-          outline: const Color(0xFFB8D0C4),
-          outlineVariant: const Color(0xFFD6E8DF),
-        );
+    final scheme = ColorScheme.light(
+      primary: AppColors.primary,
+      onPrimary: Colors.white,
+      primaryContainer: AppColors.primaryLight,
+      onPrimaryContainer: AppColors.primary,
+      secondary: AppColors.accent,
+      onSecondary: Colors.white,
+      surface: AppColors.card,
+      onSurface: AppColors.textPrimary,
+      onSurfaceVariant: AppColors.textSecondary,
+      outline: AppColors.border,
+      outlineVariant: const Color(0xFFEEEEEE),
+      surfaceContainerHighest: AppColors.primaryLight.withValues(alpha: 0.38),
+    );
 
-    const onInk = Color(0xFF122419);
-    final textTheme = kIsWeb
-        ? Typography.material2021(platform: TargetPlatform.android).black
-              .apply(bodyColor: onInk, displayColor: onInk)
-              .copyWith(
-                displaySmall: serifDisplay(
-                  color: onInk,
-                  fontSize: 32,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: -0.5,
-                ),
-                titleLarge: sans(
-                  color: onInk,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.2,
-                ),
-                titleMedium: sans(
-                  color: onInk,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.1,
-                ),
-                titleSmall: sans(color: onInk, fontWeight: FontWeight.w600),
-                headlineSmall: sans(
-                  color: onInk,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: -0.35,
-                ),
-                bodyLarge: sans(
-                  color: const Color(0xFF2F4A3E),
-                  height: 1.45,
-                  fontWeight: FontWeight.w400,
-                ),
-                bodyMedium: sans(color: const Color(0xFF2F4A3E), height: 1.42),
-                bodySmall: sans(color: const Color(0xFF5B7568), height: 1.35),
-                labelLarge: sans(
-                  color: onInk,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.2,
-                ),
-                labelMedium: sans(
-                  letterSpacing: 0.6,
-                  fontWeight: FontWeight.w600,
-                  color: onInk,
-                ),
-              )
-        : GoogleFonts.plusJakartaSansTextTheme(
-            Typography.material2021(
-              platform: TargetPlatform.android,
-            ).black.apply(bodyColor: onInk, displayColor: onInk),
-          ).copyWith(
-            displaySmall: GoogleFonts.dmSerifDisplay(
-              fontSize: 32,
-              fontWeight: FontWeight.w600,
-              color: onInk,
-              letterSpacing: -0.5,
-            ),
-            titleLarge: GoogleFonts.plusJakartaSans(
+    final baseTypography = Typography.material2021(
+      platform: TargetPlatform.android,
+    ).black.apply(
+      bodyColor: AppColors.textPrimary,
+      displayColor: AppColors.textPrimary,
+    );
+
+    final TextTheme textTheme = kIsWeb
+        ? baseTypography.copyWith(
+            displaySmall: sans(
+              color: AppColors.textPrimary,
+              fontSize: 28,
               fontWeight: FontWeight.w700,
+              letterSpacing: -0.4,
+            ),
+            titleLarge: sans(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w700,
+              fontSize: 22,
               letterSpacing: -0.2,
-              color: onInk,
             ),
-            titleMedium: GoogleFonts.plusJakartaSans(
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.1,
-              color: onInk,
-            ),
-            titleSmall: GoogleFonts.plusJakartaSans(
+            titleMedium: sans(
+              color: AppColors.textPrimary,
               fontWeight: FontWeight.w600,
-              color: onInk,
+              fontSize: 18,
             ),
-            headlineSmall: GoogleFonts.plusJakartaSans(
+            titleSmall: sans(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+            ),
+            headlineSmall: sans(
+              color: AppColors.textPrimary,
               fontWeight: FontWeight.bold,
+              fontSize: 24,
               letterSpacing: -0.35,
-              color: onInk,
             ),
-            bodyLarge: GoogleFonts.plusJakartaSans(
+            bodyLarge: sans(
+              color: AppColors.textSecondary,
               height: 1.45,
               fontWeight: FontWeight.w400,
-              color: const Color(0xFF2F4A3E),
+              fontSize: 16,
             ),
-            bodyMedium: GoogleFonts.plusJakartaSans(
+            bodyMedium: sans(
+              color: AppColors.textSecondary,
               height: 1.42,
-              color: const Color(0xFF2F4A3E),
+              fontSize: 14,
             ),
-            bodySmall: GoogleFonts.plusJakartaSans(
-              color: const Color(0xFF5B7568),
+            bodySmall: sans(
+              color: AppColors.textSecondary,
+              height: 1.35,
+              fontSize: 12,
+            ),
+            labelLarge: sans(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.15,
+              fontSize: 14,
+            ),
+            labelMedium: sans(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.4,
+              fontSize: 12,
+            ),
+          )
+        : GoogleFonts.poppinsTextTheme(baseTypography).copyWith(
+            displaySmall: GoogleFonts.poppins(
+              fontSize: 28,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.4,
+              color: AppColors.textPrimary,
+            ),
+            titleLarge: GoogleFonts.poppins(
+              fontWeight: FontWeight.w700,
+              fontSize: 22,
+              letterSpacing: -0.2,
+              color: AppColors.textPrimary,
+            ),
+            titleMedium: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              fontSize: 18,
+              color: AppColors.textPrimary,
+            ),
+            titleSmall: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              color: AppColors.textPrimary,
+            ),
+            headlineSmall: GoogleFonts.poppins(
+              fontWeight: FontWeight.bold,
+              fontSize: 24,
+              letterSpacing: -0.35,
+              color: AppColors.textPrimary,
+            ),
+            bodyLarge: GoogleFonts.poppins(
+              height: 1.45,
+              fontWeight: FontWeight.w400,
+              fontSize: 16,
+              color: AppColors.textSecondary,
+            ),
+            bodyMedium: GoogleFonts.poppins(
+              height: 1.42,
+              fontSize: 14,
+              color: AppColors.textSecondary,
+            ),
+            bodySmall: GoogleFonts.poppins(
+              fontSize: 12,
+              color: AppColors.textSecondary,
               height: 1.35,
             ),
-            labelLarge: GoogleFonts.plusJakartaSans(
+            labelLarge: GoogleFonts.poppins(
               fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
-              color: onInk,
+              letterSpacing: 0.15,
+              fontSize: 14,
+              color: AppColors.textPrimary,
             ),
-            labelMedium: GoogleFonts.plusJakartaSans(
-              letterSpacing: 0.6,
+            labelMedium: GoogleFonts.poppins(
+              letterSpacing: 0.4,
               fontWeight: FontWeight.w600,
+              fontSize: 12,
+              color: AppColors.textPrimary,
             ),
           );
+
+    final ctaShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+    );
 
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: scheme,
-      scaffoldBackgroundColor: Colors.white,
+      primaryColor: AppColors.primary,
+      scaffoldBackgroundColor: AppColors.background,
       textTheme: textTheme,
       splashFactory: InkRipple.splashFactory,
-      splashColor: mintGlow.withValues(alpha: 0.22),
-      highlightColor: mintGlow.withValues(alpha: 0.09),
+      splashColor: AppColors.accent.withValues(alpha: 0.22),
+      highlightColor: AppColors.primaryLight.withValues(alpha: 0.35),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
@@ -501,106 +531,98 @@ abstract final class AppTheme {
       ),
       appBarTheme: AppBarTheme(
         elevation: 0,
-        scrolledUnderElevation: 0.5,
-        backgroundColor: Colors.white.withValues(alpha: 0.96),
+        scrolledUnderElevation: 0,
+        backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
-        foregroundColor: onInk,
+        foregroundColor: AppColors.textPrimary,
         centerTitle: false,
-        shadowColor: Colors.black.withValues(alpha: 0.06),
+        shadowColor: Colors.transparent,
         systemOverlayStyle: kIsWeb ? null : SystemUiOverlayStyle.dark,
         shape: Border(
-          bottom: BorderSide(
-            color: scheme.outline.withValues(alpha: 0.38),
-            width: 1,
-          ),
+          bottom: BorderSide(color: AppColors.border.withValues(alpha: 0.85)),
         ),
         titleSpacing: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF2D4A3C), size: 24),
+        iconTheme: const IconThemeData(
+          color: AppColors.textPrimary,
+          size: 24,
+        ),
       ),
       cardTheme: CardThemeData(
-        color: Colors.white,
-        elevation: 1,
-        shadowColor: Colors.black.withValues(alpha: 0.12),
+        color: AppColors.card,
+        elevation: 2,
+        shadowColor: Colors.black.withValues(alpha: 0.05),
+        surfaceTintColor: Colors.transparent,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: BorderSide(color: scheme.outline.withValues(alpha: 0.45)),
+          borderRadius: BorderRadius.circular(16),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           elevation: 0,
-          shadowColor: leafDim.withValues(alpha: 0.35),
-          backgroundColor: mintGlow,
-          foregroundColor: forest,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+          shape: ctaShape,
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           elevation: 0,
-          shadowColor: leafDim.withValues(alpha: 0.4),
-          backgroundColor: forestBright,
+          backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
+          shape: ctaShape,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: forestBright,
-          side: BorderSide(color: mintGlow.withValues(alpha: 0.9)),
+          foregroundColor: AppColors.primary,
+          side: const BorderSide(color: AppColors.primary, width: 1.25),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
+          shape: ctaShape,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: scheme.surfaceContainerHighest,
+        fillColor: AppColors.card,
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
+          horizontal: AppSpacing.md,
           vertical: 14,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: scheme.outline.withValues(alpha: 0.7)),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: scheme.outline.withValues(alpha: 0.75)),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: forestBright, width: 2),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
       ),
       chipTheme: ChipThemeData(
         elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-        backgroundColor: scheme.surfaceContainerHighest,
-        selectedColor: forestBright.withValues(alpha: 0.9),
-        secondarySelectedColor: forestBright.withValues(alpha: 0.9),
-        disabledColor: Colors.grey.shade200,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        backgroundColor: AppColors.primaryLight,
+        selectedColor: AppColors.primary,
+        secondarySelectedColor: AppColors.primary,
+        disabledColor: AppColors.border.withValues(alpha: 0.5),
         labelStyle: sans(
-          color: onInk,
+          color: AppColors.primary,
           fontWeight: FontWeight.w600,
-          fontSize: 13,
+          fontSize: 12,
         ),
         secondaryLabelStyle: sans(
           color: Colors.white,
           fontWeight: FontWeight.w600,
-          fontSize: 13,
+          fontSize: 12,
         ),
         brightness: Brightness.light,
-        side: BorderSide(color: scheme.outline.withValues(alpha: 0.6)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        side: BorderSide.none,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(
@@ -611,13 +633,13 @@ abstract final class AppTheme {
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
           side: WidgetStateProperty.all(
-            BorderSide(color: scheme.outline.withValues(alpha: 0.75)),
+            BorderSide(color: AppColors.border.withValues(alpha: 0.95)),
           ),
           visualDensity: VisualDensity.standard,
           animationDuration: const Duration(milliseconds: 280),
           backgroundColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
-              return forestBright.withValues(alpha: 0.94);
+              return AppColors.primary;
             }
             return Colors.transparent;
           }),
@@ -625,49 +647,49 @@ abstract final class AppTheme {
             if (states.contains(WidgetState.selected)) {
               return Colors.white;
             }
-            return const Color(0xFF3D5A4D);
+            return AppColors.textSecondary;
           }),
         ),
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
-        color: forestBright,
-        linearTrackColor: scheme.outline.withValues(alpha: 0.35),
-        circularTrackColor: scheme.outline.withValues(alpha: 0.28),
+        color: AppColors.primary,
+        linearTrackColor: AppColors.border.withValues(alpha: 0.65),
+        circularTrackColor: AppColors.border.withValues(alpha: 0.45),
       ),
       dividerTheme: DividerThemeData(
-        color: scheme.outline.withValues(alpha: 0.45),
+        color: AppColors.border.withValues(alpha: 0.85),
         thickness: 1,
       ),
-      iconTheme: const IconThemeData(color: Color(0xFF486A5A), size: 24),
+      iconTheme: const IconThemeData(color: AppColors.textSecondary, size: 24),
       listTileTheme: ListTileThemeData(
         tileColor: Colors.transparent,
-        iconColor: const Color(0xFF486A5A),
-        textColor: onInk,
+        iconColor: AppColors.textSecondary,
+        textColor: AppColors.textPrimary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         elevation: 8,
-        backgroundColor: const Color(0xFF203C2E),
-        contentTextStyle: sans(color: Colors.white),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        backgroundColor: AppColors.primary,
+        contentTextStyle: sans(color: Colors.white, fontSize: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       dialogTheme: DialogThemeData(
         elevation: 12,
-        backgroundColor: Colors.white,
-        shadowColor: Colors.black38,
+        backgroundColor: AppColors.card,
+        shadowColor: Colors.black.withValues(alpha: 0.12),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: scheme.outline.withValues(alpha: 0.5)),
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: AppColors.border.withValues(alpha: 0.65)),
         ),
       ),
       tooltipTheme: TooltipThemeData(
         waitDuration: const Duration(milliseconds: 520),
         textStyle: sans(color: Colors.white, fontSize: 12),
         decoration: BoxDecoration(
-          color: forest.withValues(alpha: 0.94),
+          color: AppColors.primary.withValues(alpha: 0.96),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: mintGlow.withValues(alpha: 0.25)),
+          border: Border.all(color: AppColors.primaryLight.withValues(alpha: 0.4)),
         ),
       ),
     );

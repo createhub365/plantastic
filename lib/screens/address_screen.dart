@@ -25,6 +25,35 @@ class _AddressScreenState extends State<AddressScreen> {
   final _postal = TextEditingController();
   bool _submitting = false;
 
+  static const double _fieldRadius = 12;
+
+  InputDecoration _fieldDecoration(BuildContext context, String label,
+      {String? hint}) {
+    final cs = Theme.of(context).colorScheme;
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(_fieldRadius),
+      borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.55)),
+    );
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      border: border,
+      enabledBorder: border,
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(_fieldRadius),
+        borderSide: BorderSide(color: cs.primary, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(_fieldRadius),
+        borderSide: BorderSide(color: cs.error.withValues(alpha: 0.9)),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(_fieldRadius),
+        borderSide: BorderSide(color: cs.error, width: 1.5),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _name.dispose();
@@ -77,116 +106,184 @@ class _AddressScreenState extends State<AddressScreen> {
   Widget build(BuildContext context) {
     final configured = AppConfig.supabaseReady;
     final g = PlantasticLayout.gutter(context);
+    final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: const PlantasticAppBar(showBack: true),
-      body: PlantasticLayout.constrainedBody(
-        context,
-        child: ListView(
-          padding: EdgeInsets.fromLTRB(g, 16, g, 24),
-          children: [
-            Text(
-              'Delivery address',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            if (!configured)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Card(
-                  color: const Color(0xFF3E2723),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(
-                          Icons.info_outline,
-                          color: Color(0xFFFFB74D),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: PlantasticLayout.constrainedBody(
+              context,
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(g, 16, g, 16),
+                children: [
+                  Text(
+                    'Delivery details',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'Add SUPABASE_ANON_KEY to .env so orders reach your dashboard.',
-                            style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Step 2 of 3',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: cs.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (!configured)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Card(
+                        color: const Color(0xFF3E2723),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(
+                                Icons.info_outline,
+                                color: Color(0xFFFFB74D),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Add SUPABASE_ANON_KEY to .env so orders reach your dashboard.',
+                                  style:
+                                      Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ),
+                            ],
                           ),
+                        ),
+                      ),
+                    ),
+                  Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        TextFormField(
+                          controller: _name,
+                          decoration:
+                              _fieldDecoration(context, 'Full name'),
+                          textCapitalization: TextCapitalization.words,
+                          validator: (v) => (v == null || v.trim().length < 2)
+                              ? 'Enter your name'
+                              : null,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _phone,
+                          decoration: _fieldDecoration(
+                            context,
+                            'Phone',
+                            hint: '10-digit mobile',
+                          ),
+                          keyboardType: TextInputType.phone,
+                          validator: (v) =>
+                              (v == null || v.trim().length < 10)
+                                  ? 'Enter a valid phone number'
+                                  : null,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _line1,
+                          decoration: _fieldDecoration(
+                            context,
+                            'Address line',
+                            hint: 'House / street',
+                          ),
+                          maxLines: 2,
+                          validator: (v) =>
+                              (v == null || v.trim().length < 5)
+                                  ? 'Enter delivery address'
+                                  : null,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _city,
+                          decoration: _fieldDecoration(context, 'City'),
+                          textCapitalization: TextCapitalization.words,
+                          validator: (v) =>
+                              (v == null || v.trim().isEmpty)
+                                  ? 'Enter city'
+                                  : null,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _postal,
+                          decoration:
+                              _fieldDecoration(context, 'Postal code'),
+                          keyboardType: TextInputType.number,
+                          validator: (v) =>
+                              (v == null || v.trim().length < 6)
+                                  ? 'Enter postal code'
+                                  : null,
                         ),
                       ],
                     ),
                   ),
-                ),
-              ),
-            Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: _name,
-                    decoration: const InputDecoration(labelText: 'Full name'),
-                    textCapitalization: TextCapitalization.words,
-                    validator: (v) => (v == null || v.trim().length < 2)
-                        ? 'Enter your name'
-                        : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _phone,
-                    decoration: const InputDecoration(
-                      labelText: 'Phone',
-                      hintText: '10-digit mobile',
-                    ),
-                    keyboardType: TextInputType.phone,
-                    validator: (v) => (v == null || v.trim().length < 10)
-                        ? 'Enter a valid phone number'
-                        : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _line1,
-                    decoration: const InputDecoration(
-                      labelText: 'Address line',
-                      hintText: 'House / street',
-                    ),
-                    maxLines: 2,
-                    validator: (v) => (v == null || v.trim().length < 5)
-                        ? 'Enter delivery address'
-                        : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _city,
-                    decoration: const InputDecoration(labelText: 'City'),
-                    textCapitalization: TextCapitalization.words,
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Enter city' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _postal,
-                    decoration: const InputDecoration(labelText: 'Postal code'),
-                    keyboardType: TextInputType.number,
-                    validator: (v) => (v == null || v.trim().length < 6)
-                        ? 'Enter postal code'
-                        : null,
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: _submitting ? null : () => _placeOrder(context),
-                    child: _submitting
-                        ? const SizedBox(
-                            height: 22,
-                            width: 22,
-                            child: Center(child: PlantasticLoading.inline),
-                          )
-                        : const Text('Place order'),
+                  const SizedBox(height: 20),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.lock_outline_rounded,
+                        size: 18,
+                        color: cs.primary.withValues(alpha: 0.9),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Your data is सुरक्षित',
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color:
+                                        cs.onSurface.withValues(alpha: 0.75),
+                                    height: 1.35,
+                                  ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+          SafeArea(
+            top: false,
+            maintainBottomViewPadding: true,
+            child: Material(
+              elevation: 10,
+              shadowColor: Colors.black.withValues(alpha: 0.08),
+              color: cs.surface,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(g, 12, g, 12),
+                child: FilledButton(
+                  onPressed:
+                      _submitting ? null : () => _placeOrder(context),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: _submitting
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: Center(child: PlantasticLoading.inline),
+                        )
+                      : const Text('Place order'),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

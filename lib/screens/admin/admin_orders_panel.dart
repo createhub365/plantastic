@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/shop_order.dart';
 import '../../services/admin_orders_service.dart';
-import '../../theme/app_theme.dart';
+import '../../theme/admin_shell.dart';
 import '../../widgets/admin/admin_widgets.dart';
 
 class AdminOrdersPanel extends StatefulWidget {
@@ -41,6 +41,56 @@ class _AdminOrdersPanelState extends State<AdminOrdersPanel>
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
   }
 
+  static const List<String> _statusChoices = [
+    'pending',
+    'shipped',
+    'delivered',
+  ];
+
+  String _normalizeStatus(String raw) {
+    final x = raw.trim().toLowerCase();
+    if (_statusChoices.contains(x)) return x;
+    return 'pending';
+  }
+
+  String _statusLabel(String code) {
+    return switch (code) {
+      'shipped' => 'Shipped',
+      'delivered' => 'Delivered',
+      _ => 'Pending',
+    };
+  }
+
+  String _shortOrderId(String id) {
+    final t = id.trim();
+    if (t.length <= 10) return t;
+    return '${t.substring(0, 8)}…';
+  }
+
+  Future<void> _setStatus(int index, String next) async {
+    final o = _orders[index];
+    final canon = _normalizeStatus(next);
+    final prev = o.status;
+    setState(() => _orders[index] = o.copyWith(status: canon));
+    try {
+      await AdminOrdersService.updateOrderStatus(id: o.id, status: canon);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Marked as ${_statusLabel(canon)}')),
+      );
+    } catch (e) {
+      setState(() => _orders[index] = o.copyWith(status: prev));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Status not saved — ensure `orders.status` exists and RLS allows updates: $e',
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -73,10 +123,10 @@ class _AdminOrdersPanelState extends State<AdminOrdersPanel>
       onRefresh: _load,
       child: ListView.builder(
         padding: EdgeInsets.only(
-          bottom: MediaQuery.paddingOf(context).bottom + 24,
-          top: 12,
-          left: 14,
-          right: 14,
+          bottom: MediaQuery.paddingOf(context).bottom + 28,
+          top: 4,
+          left: 0,
+          right: 0,
         ),
         itemCount: _orders.length,
         itemBuilder: (context, i) {
@@ -85,67 +135,134 @@ class _AdminOrdersPanelState extends State<AdminOrdersPanel>
           final dateStr = dt != null
               ? '${dt.day}/${dt.month}/${dt.year} ${dt.hour.toString().padLeft(2)}:${dt.minute.toString().padLeft(2)}'
               : '—';
+          final tt = Theme.of(context).textTheme;
+          final scheme = Theme.of(context).colorScheme;
 
-          return Card(
-            elevation: 0,
-            clipBehavior: Clip.antiAlias,
-            margin: const EdgeInsets.only(bottom: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(
-                color: AppTheme.surfaceBorder.withValues(alpha: 0.6),
+          final statusCanon = _normalizeStatus(o.status);
+
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Material(
+              elevation: 0,
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AdminShell.cardRadiusSm),
+                side: BorderSide(color: scheme.outline.withValues(alpha: 0.35)),
               ),
-            ),
-            child: ExpansionTile(
-              initiallyExpanded: i == 0,
-              collapsedShape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(16)),
-              ),
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(16)),
-              ),
-              leading: CircleAvatar(
-                backgroundColor: AppTheme.mintGlow.withValues(alpha: 0.15),
-                child: Icon(
-                  Icons.currency_rupee_rounded,
-                  size: 20,
-                  color: AppTheme.mintGlow.withValues(alpha: 0.95),
+              clipBehavior: Clip.antiAlias,
+              child: ExpansionTile(
+                initiallyExpanded: i == 0,
+                tilePadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
                 ),
-              ),
-              title: Text(
-                '₹${o.total}',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              subtitle: Text('$dateStr • ${o.customerName}'),
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _line('Phone', o.phone),
-                      _line(
-                        'Address',
-                        '${o.addressLine1}\n${o.city} ${o.postalCode}',
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Items',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 6),
-                      ...o.rawItems.map(
-                        (it) => Padding(
-                          padding: const EdgeInsets.only(bottom: 6),
-                          child: Text(
-                            '• ${it['title']} — ${it['kit_label'] ?? it['kit']} × ${it['qty']} @ ₹${it['unitPrice']}',
-                          ),
-                        ),
-                      ),
-                    ],
+                collapsedBackgroundColor: Colors.white,
+                backgroundColor: AdminShell.dashboardCanvas.withValues(
+                  alpha: 0.55,
+                ),
+                leading: CircleAvatar(
+                  radius: 20,
+                  backgroundColor: const Color(0xFFE2E8F0),
+                  child: Icon(
+                    Icons.receipt_long_rounded,
+                    size: 22,
+                    color: scheme.onSurfaceVariant.withValues(alpha: 0.88),
                   ),
                 ),
-              ],
+                title: Text(
+                  'Order #${_shortOrderId(o.id)}',
+                  style: tt.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                    color: const Color(0xFF2D3748),
+                  ),
+                ),
+                subtitle: Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    '₹${o.total} • ${_statusLabel(statusCanon)}\n'
+                    '$dateStr • ${o.customerName}',
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: tt.bodyMedium?.copyWith(
+                      height: 1.42,
+                      color: scheme.onSurfaceVariant.withValues(alpha: 0.92),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: statusCanon,
+                        borderRadius: BorderRadius.circular(12),
+                        style: tt.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF2D3748),
+                        ),
+                        items: [
+                          for (final code in _statusChoices)
+                            DropdownMenuItem(
+                              value: code,
+                              child: Text(_statusLabel(code)),
+                            ),
+                        ],
+                        onChanged: (v) {
+                          if (v != null) _setStatus(i, v);
+                        },
+                      ),
+                    ),
+                    Icon(
+                      Icons.expand_more_rounded,
+                      color: scheme.onSurfaceVariant.withValues(alpha: 0.55),
+                    ),
+                  ],
+                ),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Divider(
+                          height: 26,
+                          color: scheme.outline.withValues(alpha: 0.35),
+                        ),
+                        _line('Phone', o.phone),
+                        _line(
+                          'Address',
+                          '${o.addressLine1}\n${o.city} ${o.postalCode}',
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6, top: 4),
+                          child: Text(
+                            'Items',
+                            style: tt.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: scheme.onSurface.withValues(alpha: 0.93),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        ...o.rawItems.map(
+                          (it) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Text(
+                              '• ${it['title']} — ${it['kit_label'] ?? it['kit']} × ${it['qty']} @ ₹${it['unitPrice']}',
+                              style: tt.bodyMedium?.copyWith(
+                                height: 1.45,
+                                color: scheme.onSurface.withValues(alpha: 0.9),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },

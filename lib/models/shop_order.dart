@@ -10,6 +10,7 @@ class ShopOrder {
     required this.postalCode,
     required this.total,
     required this.rawItems,
+    required this.status,
   });
 
   final String id;
@@ -21,6 +22,24 @@ class ShopOrder {
   final String postalCode;
   final num total;
   final List<Map<String, dynamic>> rawItems;
+
+  /// Raw DB value (e.g. `pending`, `shipped`). Defaults when column absent.
+  final String status;
+
+  ShopOrder copyWith({String? status}) {
+    return ShopOrder(
+      id: id,
+      createdAt: createdAt,
+      customerName: customerName,
+      phone: phone,
+      addressLine1: addressLine1,
+      city: city,
+      postalCode: postalCode,
+      total: total,
+      rawItems: rawItems,
+      status: status ?? this.status,
+    );
+  }
 
   factory ShopOrder.fromMap(Map<String, dynamic> row) {
     final itemsDyn = row['items'];
@@ -41,6 +60,11 @@ class ShopOrder {
       at = DateTime.tryParse(rawAt);
     }
 
+    final rawStatus = row['status'] ?? row['fulfillment_status'];
+    final statusStr = rawStatus == null
+        ? 'pending'
+        : '$rawStatus'.trim().toLowerCase();
+
     return ShopOrder(
       id: row['id'] == null ? '' : '${row['id']}',
       createdAt: at,
@@ -51,6 +75,7 @@ class ShopOrder {
       postalCode: row['postal_code'] as String? ?? '',
       total: row['total'] as num? ?? 0,
       rawItems: parsed,
+      status: statusStr.isEmpty ? 'pending' : statusStr,
     );
   }
 }

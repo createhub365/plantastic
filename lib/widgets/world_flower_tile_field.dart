@@ -93,7 +93,9 @@ class WorldFlowerTileField extends StatelessWidget {
           controller: ctl,
           focusNode: fn,
           style: formStyle
-              ? theme.textTheme.bodyLarge?.copyWith(color: AppTheme.textPrimary)
+              ? theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.onSurface,
+                )
               : theme.textTheme.bodySmall?.copyWith(
                   color: AppTheme.textPrimary,
                 ),
