@@ -269,6 +269,38 @@ class _AddressScreenState extends State<AddressScreen> {
                         ),
                       ),
                     ),
+                  if (configured &&
+                      kIsWeb &&
+                      AppConfig.razorpayKeyId.trim().isEmpty &&
+                      cart.lines.fold<int>(0, (s, l) => s + l.lineTotal) > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Card(
+                        color: const Color(0xFFE65100),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(
+                                Icons.payment_rounded,
+                                color: Color(0xFFFFE0B2),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Razorpay is off in this build (no RAZORPAY_KEY_ID). '
+                                  'Add RAZORPAY_KEY_ID under Vercel → Environment Variables '
+                                  'and redeploy so Pay & place order opens checkout.',
+                                  style:
+                                      Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                   Form(
                     key: _formKey,
                     child: Column(
