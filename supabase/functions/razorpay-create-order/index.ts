@@ -24,7 +24,13 @@ Deno.serve(async (req: Request) => {
   const keyId = Deno.env.get("RAZORPAY_KEY_ID");
   const keySecret = Deno.env.get("RAZORPAY_KEY_SECRET");
   if (!keyId?.trim() || !keySecret?.trim()) {
-    return json({ error: "Razorpay keys missing on server (set secrets)" }, 500);
+    return json(
+      {
+        error:
+          "Razorpay keys missing — set Supabase Edge Function secrets RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET (Dashboard → Edge Functions secrets, or `supabase secrets set`).",
+      },
+      500,
+    );
   }
 
   let body: { amount_paise?: number };

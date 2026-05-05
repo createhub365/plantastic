@@ -44,7 +44,14 @@ Deno.serve(async (req: Request) => {
 
   const secret = Deno.env.get("RAZORPAY_KEY_SECRET")?.trim();
   if (!secret) {
-    return json({ valid: false, error: "Secret not configured" }, 500);
+    return json(
+      {
+        valid: false,
+        error:
+          "RAZORPAY_KEY_SECRET not set — add it under Supabase Edge Function secrets.",
+      },
+      500,
+    );
   }
 
   let body: {
