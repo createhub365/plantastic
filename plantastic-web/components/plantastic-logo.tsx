@@ -24,7 +24,7 @@ export function PlantasticLogo({ reduceMotion }: Props) {
   return (
     <MotionLink
       href="/"
-      className="group flex min-w-0 items-center gap-2 truncate sm:gap-3"
+      className="group flex touch-manipulation min-w-0 items-center gap-2 truncate sm:gap-3"
       aria-label="Plantastic home"
       whileHover={reduce ? undefined : { scale: 1.02 }}
       whileTap={reduce ? undefined : { scale: 0.98 }}
@@ -38,12 +38,12 @@ export function PlantasticLogo({ reduceMotion }: Props) {
           src="/brand/Logo.png"
           alt=""
           decoding="async"
-          className="h-[46px] w-auto max-w-[min(40vw,190px)] shrink-0 object-contain object-left pointer-events-none sm:h-14"
+          className="h-10 w-auto max-w-[min(34vw,150px)] shrink-0 object-contain object-left pointer-events-none sm:h-14 sm:max-w-[190px]"
           onError={onLogoError}
         />
       )}
       <span
-        className="min-w-0 truncate text-[18px] font-semibold tracking-tight sm:text-xl"
+        className="min-w-0 truncate text-[16px] font-semibold tracking-tight max-[340px]:max-w-[9.5rem] sm:text-xl"
         style={{ color: colors.textPrimary }}
       >
         Plantastic 🌿

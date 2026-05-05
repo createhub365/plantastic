@@ -100,7 +100,7 @@ export function HomeShop({
   }, [visible, query]);
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-5 px-4 pb-16 pt-4 sm:space-y-6 sm:px-6 sm:pb-20 sm:pt-6">
+    <div className="mx-auto w-full max-w-6xl space-y-4 px-[max(0.875rem,env(safe-area-inset-left))] pb-[calc(5rem+env(safe-area-inset-bottom))] pt-4 pr-[max(0.875rem,env(safe-area-inset-right))] sm:space-y-6 sm:px-6 sm:pb-24 sm:pt-6">
       <motion.div variants={fadeUp} initial="hidden" animate="show">
         <HomeHero config={banner} />
       </motion.div>
@@ -155,9 +155,9 @@ export function HomeShop({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by name…"
-            className="w-full rounded-full border py-2 pl-10 pr-4 text-sm outline-none ring-0"
+            className="w-full rounded-full border py-3 pl-11 pr-4 text-[15px] outline-none ring-0 transition-shadow focus-visible:ring-[3px] focus-visible:ring-[#2E7D32]/25 sm:py-2 sm:pl-10 sm:text-sm"
             style={{ borderColor: colors.border, backgroundColor: colors.card }}
-            whileFocus={reduce ? undefined : { scale: 1.02 }}
+            whileFocus={reduce ? undefined : { scale: 1 }}
           />
         </label>
       </motion.div>
@@ -174,7 +174,7 @@ export function HomeShop({
               whileHover={reduce ? undefined : { y: -2 }}
               whileTap={reduce ? undefined : { scale: 0.97 }}
               transition={{ type: "spring", stiffness: 440, damping: 28 }}
-              className="relative inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold"
+              className="relative inline-flex h-11 min-h-11 shrink-0 touch-manipulation items-center gap-2 rounded-full border px-4 py-2 text-[13px] font-semibold sm:h-auto sm:min-h-0 sm:gap-2 sm:px-3 sm:py-1.5 sm:text-sm"
               style={{
                 borderColor: active ? t.accent : colors.border,
                 backgroundColor: active ? t.activeBg : colors.card,

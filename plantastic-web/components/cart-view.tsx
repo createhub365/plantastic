@@ -121,19 +121,19 @@ export function CartView() {
 
   return (
     <motion.div
-      className="mx-auto w-full max-w-2xl space-y-4 px-4 py-8 sm:px-6 sm:py-10"
+      className="mx-auto w-full max-w-2xl space-y-4 px-[max(1rem,env(safe-area-inset-left))] py-8 pr-[max(1rem,env(safe-area-inset-right))] sm:space-y-5 sm:px-6 sm:py-10"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
-      <div className="flex items-end justify-between gap-4">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0 flex-1">
           <motion.h1
             className="text-xl font-semibold tracking-tight sm:text-2xl"
             style={{ color: colors.textPrimary }}
           >
             Cart
           </motion.h1>
-          <p className="mt-1 text-sm" style={{ color: colors.textSecondary }}>
+          <p className="mt-1 text-sm leading-snug max-sm:text-[13px]" style={{ color: colors.textSecondary }}>
             Fill in where to ship, then pay with Razorpay. Your order row is saved
             in Supabase after payment verifies (same as the Flutter app).
           </p>
@@ -141,7 +141,7 @@ export function CartView() {
         <motion.button
           type="button"
           onClick={() => cart.clear()}
-          className="text-xs font-semibold underline-offset-4 hover:underline"
+          className="touch-manipulation self-start text-xs font-semibold underline-offset-4 hover:underline sm:self-auto"
           style={{ color: colors.textSecondary }}
           whileHover={reduce ? undefined : { scale: 1.06 }}
           whileTap={reduce ? undefined : { scale: 0.94 }}
@@ -182,7 +182,7 @@ export function CartView() {
                 <div className="flex flex-wrap items-center justify-end gap-2">
                   <motion.button
                     type="button"
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border"
+                    className="inline-flex h-11 w-11 touch-manipulation items-center justify-center rounded-full border"
                     style={{ borderColor: colors.border }}
                     aria-label="Decrease quantity"
                     whileTap={reduce ? undefined : { scale: 0.9 }}
@@ -207,7 +207,7 @@ export function CartView() {
                   </motion.span>
                   <motion.button
                     type="button"
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border"
+                    className="inline-flex h-11 w-11 touch-manipulation items-center justify-center rounded-full border"
                     style={{ borderColor: colors.border }}
                     aria-label="Increase quantity"
                     whileTap={reduce ? undefined : { scale: 0.9 }}
@@ -224,7 +224,7 @@ export function CartView() {
                   </motion.button>
                   <motion.button
                     type="button"
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-full"
+                    className="inline-flex h-11 w-11 touch-manipulation items-center justify-center rounded-full"
                     style={{ color: colors.textSecondary }}
                     aria-label="Remove line from cart"
                     title="Remove"
@@ -285,7 +285,7 @@ export function CartView() {
               Full name
             </span>
             <input
-              className="w-full rounded-xl border px-3 py-2 text-sm outline-none ring-green-900/15 focus-visible:ring-2"
+              className="w-full rounded-xl border px-3 py-3 text-[15px] outline-none ring-green-900/15 focus-visible:ring-2 sm:py-2 sm:text-sm"
               style={{ borderColor: colors.border, color: colors.textPrimary }}
               autoComplete="name"
               value={delivery.customerName}
@@ -301,7 +301,7 @@ export function CartView() {
             <input
               type="tel"
               inputMode="numeric"
-              className="w-full rounded-xl border px-3 py-2 text-sm outline-none ring-green-900/15 focus-visible:ring-2"
+              className="w-full rounded-xl border px-3 py-3 text-[15px] outline-none ring-green-900/15 focus-visible:ring-2 sm:py-2 sm:text-sm"
               style={{ borderColor: colors.border, color: colors.textPrimary }}
               autoComplete="tel"
               placeholder="10-digit number"
@@ -318,7 +318,7 @@ export function CartView() {
             <input
               type="tel"
               inputMode="numeric"
-              className="w-full rounded-xl border px-3 py-2 text-sm outline-none ring-green-900/15 focus-visible:ring-2"
+              className="w-full rounded-xl border px-3 py-3 text-[15px] outline-none ring-green-900/15 focus-visible:ring-2 sm:py-2 sm:text-sm"
               style={{ borderColor: colors.border, color: colors.textPrimary }}
               autoComplete="postal-code"
               placeholder="6 digits"
@@ -334,7 +334,7 @@ export function CartView() {
               Address
             </span>
             <input
-              className="w-full rounded-xl border px-3 py-2 text-sm outline-none ring-green-900/15 focus-visible:ring-2"
+              className="w-full rounded-xl border px-3 py-3 text-[15px] outline-none ring-green-900/15 focus-visible:ring-2 sm:py-2 sm:text-sm"
               style={{ borderColor: colors.border, color: colors.textPrimary }}
               autoComplete="street-address"
               placeholder="House / street / landmark"
@@ -349,7 +349,7 @@ export function CartView() {
               City / town
             </span>
             <input
-              className="w-full rounded-xl border px-3 py-2 text-sm outline-none ring-green-900/15 focus-visible:ring-2"
+              className="w-full rounded-xl border px-3 py-3 text-[15px] outline-none ring-green-900/15 focus-visible:ring-2 sm:py-2 sm:text-sm"
               style={{ borderColor: colors.border, color: colors.textPrimary }}
               autoComplete="address-level2"
               value={delivery.city}
@@ -375,10 +375,14 @@ export function CartView() {
         </p>
       ) : null}
 
-      <div className="flex flex-col gap-2 sm:flex-row">
+      <div
+        className="mt-6 max-sm:sticky max-sm:bottom-0 max-sm:z-10 max-sm:rounded-t-2xl max-sm:border max-sm:border-b-0 max-sm:bg-[rgba(249,251,249,0.97)] max-sm:p-4 max-sm:pb-[max(16px,env(safe-area-inset-bottom))] max-sm:shadow-[0_-12px_40px_-10px_rgba(0,0,0,0.1)] max-sm:backdrop-blur-md sm:relative sm:z-0 sm:mt-2 sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none"
+        style={{ borderColor: colors.border }}
+      >
+      <div className="flex flex-col gap-3 sm:flex-1 sm:flex-row sm:gap-2">
         <MotionLink
           href="/"
-          className="inline-flex flex-1 items-center justify-center rounded-full border px-5 py-2.5 text-sm font-semibold"
+          className="inline-flex min-h-12 touch-manipulation flex-1 items-center justify-center rounded-full border px-5 py-3 text-[15px] font-semibold sm:min-h-0 sm:py-2.5 sm:text-sm"
           style={{ borderColor: colors.border, color: colors.textPrimary }}
           whileHover={reduce ? undefined : { scale: 1.02 }}
         >
@@ -386,7 +390,7 @@ export function CartView() {
         </MotionLink>
         <motion.button
           type="button"
-          className="inline-flex flex-1 items-center justify-center rounded-full px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-70"
+          className="inline-flex min-h-12 touch-manipulation flex-1 items-center justify-center rounded-full px-5 py-3 text-[15px] font-semibold text-white disabled:cursor-wait disabled:opacity-70 sm:min-h-0 sm:py-2.5 sm:text-sm"
           style={{ backgroundColor: colors.primary }}
           disabled={checkoutBusy}
           onClick={async () => {
@@ -546,6 +550,7 @@ export function CartView() {
         >
           {checkoutBusy ? "Opening payment…" : "Pay & place order"}
         </motion.button>
+      </div>
       </div>
     </motion.div>
   );

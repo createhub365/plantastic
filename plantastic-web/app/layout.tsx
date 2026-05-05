@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
@@ -23,6 +23,13 @@ export const metadata: Metadata = {
   },
 };
 
+/** Mobile: correct scaling, notched phones, Safari dynamic toolbar (`svh` on main below). */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -40,7 +47,7 @@ export default function RootLayout({
       >
         <Providers>
           <SiteHeader />
-          <main className="min-h-[calc(100vh-56px)] sm:min-h-[calc(100vh-60px)]">
+          <main className="min-h-[calc(100svh-env(safe-area-inset-top)-3.5rem-max(12px,env(safe-area-inset-bottom)))] pb-[max(12px,env(safe-area-inset-bottom))] sm:min-h-[calc(100svh-env(safe-area-inset-top)-3.75rem-max(12px,env(safe-area-inset-bottom)))]">
             {children}
           </main>
         </Providers>

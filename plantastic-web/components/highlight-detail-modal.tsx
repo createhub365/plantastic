@@ -41,7 +41,7 @@ export function HighlightDetailModal({
       {open && tag ? (
         <motion.div
           key="backdrop"
-          className="fixed inset-0 z-50 flex transform-gpu items-end justify-center px-4 pb-8 pt-16 perspective-[880px] sm:items-center sm:p-6"
+          className="fixed inset-0 z-50 flex transform-gpu items-end justify-center p-0 pb-0 pt-10 perspective-[880px] max-sm:pb-0 max-sm:pt-8 sm:items-center sm:p-6"
           role="dialog"
           aria-modal="true"
           aria-labelledby="highlight-modal-title"
@@ -60,7 +60,7 @@ export function HighlightDetailModal({
             exit={{ opacity: 0 }}
           />
           <motion.div
-            className="relative max-h-[min(70vh,560px)] w-full max-w-lg overflow-y-auto rounded-2xl border shadow-2xl"
+            className="relative mx-0 w-full max-h-[min(92dvh,calc(100dvh-env(safe-area-inset-bottom)-0.5rem))] overflow-hidden overflow-y-auto rounded-t-[1.75rem] border shadow-2xl sm:mx-auto sm:max-h-[min(70vh,560px)] sm:w-full sm:max-w-lg sm:rounded-2xl"
             style={{
               borderColor: colors.border,
               backgroundColor: colors.card,
@@ -68,13 +68,13 @@ export function HighlightDetailModal({
             initial={
               reduce
                 ? { opacity: 0 }
-                : { opacity: 0, y: 28, scale: 0.96, rotateX: 4 }
+                : { opacity: 0, y: 40 }
             }
-            animate={{ opacity: 1, y: 0, scale: 1, rotateX: 0 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={
               reduce
                 ? { opacity: 0 }
-                : { opacity: 0, y: 16, scale: 0.98 }
+                : { opacity: 0, y: 24 }
             }
             transition={{ type: "spring", stiffness: 380, damping: 26 }}
           >
@@ -109,14 +109,14 @@ export function HighlightDetailModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="shrink-0 rounded-full bg-black/20 px-2 py-0.5 text-lg font-light leading-none text-white hover:bg-black/30"
+                className="inline-flex min-h-11 min-w-11 shrink-0 touch-manipulation items-center justify-center rounded-full bg-black/20 text-xl font-light leading-none text-white hover:bg-black/30"
                 aria-label="Close"
               >
                 ×
               </button>
             </div>
             <motion.div
-              className="px-4 py-4 text-sm leading-relaxed sm:px-5"
+              className="px-4 py-4 text-sm leading-relaxed sm:px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
               style={{ color: colors.textPrimary }}
               initial={reduce ? false : { opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}

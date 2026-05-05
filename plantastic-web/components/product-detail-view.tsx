@@ -140,7 +140,7 @@ export function ProductDetailView({
 
   return (
     <motion.div
-      className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10"
+      className="mx-auto w-full max-w-5xl px-[max(0.875rem,env(safe-area-inset-left))] py-6 pr-[max(0.875rem,env(safe-area-inset-right))] sm:px-6 sm:py-10"
       initial="hidden"
       animate="show"
       variants={{
@@ -183,7 +183,7 @@ export function ProductDetailView({
         >
           <div
             ref={heroPanelRef}
-            className="overflow-hidden rounded-2xl border"
+            className="overflow-hidden rounded-xl border sm:rounded-2xl"
             style={{ borderColor: colors.border, backgroundColor: colors.card }}
           >
             <motion.div
@@ -218,7 +218,7 @@ export function ProductDetailView({
           </div>
 
           {images.length > 1 ? (
-            <div className="flex gap-2 overflow-x-auto pb-1">
+            <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 pt-1 [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]">
               {images.map((u, i) => (
                 <motion.button
                   key={u}
@@ -226,7 +226,7 @@ export function ProductDetailView({
                   onClick={() => setImgIndex(i)}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.96 }}
-                  className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border"
+                  className="h-[4.75rem] w-[4.75rem] shrink-0 snap-start touch-manipulation overflow-hidden rounded-xl border sm:h-16 sm:w-16"
                   style={{
                     borderColor: i === imgIndex ? colors.primary : colors.border,
                   }}
@@ -249,7 +249,7 @@ export function ProductDetailView({
           <CategoryPill category={product.category} />
           <div>
             <motion.h1
-              className="mt-2 text-2xl font-extrabold tracking-tight sm:text-3xl"
+              className="mt-2 text-xl font-extrabold leading-snug tracking-tight sm:text-3xl"
               style={{ color: colors.textPrimary }}
               initial={reduceMotion ? false : { opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
@@ -327,7 +327,7 @@ export function ProductDetailView({
                           reduceMotion ? {} : { y: -4, transition: { duration: 0.2 } }
                         }
                         whileTap={reduceMotion ? {} : { scale: 0.98 }}
-                        className="relative overflow-hidden rounded-2xl border-2 px-4 py-4 text-left shadow-sm"
+                        className="relative overflow-hidden rounded-2xl border-2 px-4 py-5 text-left shadow-sm touch-manipulation sm:py-4"
                         style={{
                           borderColor: active ? colors.primary : colors.border,
                           backgroundColor: active ? `${colors.primary}0f` : colors.card,
@@ -423,7 +423,7 @@ export function ProductDetailView({
                       whileTap={
                         reduceMotion ? {} : { scale: available ? 0.97 : 1 }
                       }
-                      className="inline-flex w-full items-center justify-center rounded-full border-2 px-5 py-2.5 text-sm font-semibold shadow-sm disabled:cursor-not-allowed disabled:opacity-45 sm:w-auto sm:min-w-[128px]"
+                      className="inline-flex w-full min-h-12 touch-manipulation items-center justify-center rounded-full border-2 px-5 py-3 text-[15px] font-semibold shadow-sm disabled:cursor-not-allowed disabled:opacity-45 sm:w-auto sm:min-h-0 sm:min-w-[128px] sm:py-2.5 sm:text-sm"
                       style={{
                         borderColor: colors.primary,
                         color: colors.primary,
@@ -453,7 +453,7 @@ export function ProductDetailView({
                       whileTap={
                         reduceMotion ? {} : { scale: available ? 0.97 : 1 }
                       }
-                      className="inline-flex w-full shrink-0 items-center justify-center rounded-full px-6 py-2.5 text-sm font-semibold text-white shadow-md disabled:cursor-not-allowed disabled:opacity-45 sm:w-auto sm:min-w-[128px]"
+                      className="inline-flex w-full min-h-12 shrink-0 touch-manipulation items-center justify-center rounded-full px-6 py-3 text-[15px] font-semibold text-white shadow-md disabled:cursor-not-allowed disabled:opacity-45 sm:w-auto sm:min-h-0 sm:min-w-[128px] sm:py-2.5 sm:text-sm"
                       style={{
                         background: `linear-gradient(135deg, ${colors.primary}, #43A047)`,
                       }}

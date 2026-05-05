@@ -34,7 +34,7 @@ export function ProductCard({
   return (
     <MotionLink
       href={href}
-      className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border shadow-[0_2px_14px_rgba(0,0,0,0.06)] ring-1 ring-black/[0.03] transition-[box-shadow] duration-300 hover:shadow-[0_8px_26px_rgba(46,125,50,0.12)] hover:ring-black/[0.05]"
+      className="group flex touch-manipulation min-w-0 flex-col overflow-hidden rounded-xl border shadow-[0_2px_14px_rgba(0,0,0,0.06)] ring-1 ring-black/[0.03] transition-[box-shadow] duration-300 hover:shadow-[0_8px_26px_rgba(46,125,50,0.12)] hover:ring-black/[0.05] active:brightness-[0.98] sm:rounded-2xl"
       style={{
         borderColor: colors.border,
         backgroundColor: colors.card,
@@ -79,13 +79,13 @@ export function ProductCard({
       </div>
 
       <div
-        className="flex flex-1 flex-col gap-2 border-t bg-white p-3.5 sm:p-4"
+        className="flex flex-1 flex-col gap-1.5 border-t bg-white p-3 sm:gap-2 sm:p-4"
         style={{ borderColor: colors.border }}
       >
         <CategoryPill category={product.category} />
         <div className="flex items-baseline justify-between gap-3">
           <div
-            className={`line-clamp-2 min-w-0 flex-1 text-[16px] font-bold leading-tight tracking-tight sm:text-[17px] ${
+            className={`line-clamp-2 min-w-0 flex-1 text-[15px] font-bold leading-tight tracking-tight sm:text-[17px] ${
               muted ? "opacity-45" : ""
             }`}
             style={{

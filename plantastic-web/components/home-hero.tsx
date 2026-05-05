@@ -44,8 +44,11 @@ export function HomeHero({ config }: { config: ShopHomeBanner }) {
 
   return (
     <section
-      className="relative overflow-hidden rounded-2xl border shadow-sm"
-      style={{ borderColor: colors.border, height: heightPx }}
+      className="relative max-h-[min(50dvh,340px)] overflow-hidden rounded-xl border shadow-sm sm:max-h-none sm:rounded-2xl"
+      style={{
+        borderColor: colors.border,
+        height: heightPx,
+      }}
     >
       {showGradient ? (
         <>

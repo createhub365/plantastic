@@ -25,13 +25,14 @@ export function SiteHeader() {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
     >
-      <div className="mx-auto flex h-[56px] w-full max-w-6xl items-center justify-between gap-4 px-4 sm:h-[60px] sm:px-6">
+      <div className="pt-[env(safe-area-inset-top)]">
+      <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-2 px-4 sm:h-[60px] sm:gap-4 sm:px-6">
         <PlantasticLogo reduceMotion={reduce} />
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <MotionLink
             href="/cart"
-            className="relative inline-flex items-center justify-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold shadow-sm"
+            className="relative inline-flex touch-manipulation items-center justify-center gap-1.5 rounded-full border px-3 py-2 text-sm font-semibold shadow-sm min-[360px]:px-3.5 sm:py-1.5"
             style={{
               borderColor: colors.border,
               backgroundColor: colors.card,
@@ -62,6 +63,7 @@ export function SiteHeader() {
             ) : null}
           </MotionLink>
         </div>
+      </div>
       </div>
     </motion.header>
   );

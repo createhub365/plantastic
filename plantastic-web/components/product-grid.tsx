@@ -26,7 +26,7 @@ export function ProductGrid({
   return (
     <motion.div
       key={products.map((p) => p.id).join(",")}
-      className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3"
+      className="grid grid-cols-2 gap-2.5 min-[390px]:gap-3 sm:gap-4 lg:grid-cols-3"
       variants={reduce ? undefined : staggerContainer}
       initial={reduce ? false : "hidden"}
       animate={reduce ? false : "show"}

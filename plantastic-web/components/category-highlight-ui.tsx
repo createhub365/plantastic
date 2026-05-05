@@ -78,7 +78,7 @@ export function HighlightChipsRow({
           }}
           whileHover={reduce ? undefined : { scale: 1.02 }}
           whileTap={reduce ? undefined : { scale: 0.97 }}
-          className="inline-flex items-center gap-1.5 rounded-full border border-white/50 px-3 py-1.5 text-left text-sm font-bold text-white shadow-md"
+          className="inline-flex min-h-11 touch-manipulation items-center gap-1.5 rounded-full border border-white/50 px-3.5 py-2 text-left text-sm font-bold text-white shadow-md sm:min-h-0 sm:px-3 sm:py-1.5"
           style={{
             ...gradientStyle(tag.iconKey),
             textShadow: "0 1px 6px rgba(0,0,0,0.35)",
