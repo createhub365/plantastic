@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  --plant-top: #eef4ef;
+  --plant-mid: #f9fbf9;
+  --plant-bottom: #f2f5f3;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background-image: linear-gradient(
+    180deg,
+    var(--plant-top, #eef4ef) 0%,
+    var(--plant-mid, #f9fbf9) 55%,
+    var(--plant-bottom, #f2f5f3) 100%
+  );
+  background-attachment: fixed;
+}

@@ -48,3 +48,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# plantastic-web (Next.js — Vercel)
+plantastic-web/node_modules/
+plantastic-web/.next/
+plantastic-web/out/
+plantastic-web/.env*.local
+plantastic-web/.turbo/
